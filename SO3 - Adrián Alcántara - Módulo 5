@@ -1,0 +1,174 @@
+
+---------------------------------------------
+PRACTICA 1 — Sincronización con rsync y crontab
+---------------------------------------------
+
+NODO 1
+---------------------------------------------
+mkdir ENVIO
+touch SO{1..100}.txt
+
+# Enviar los archivos al Nodo 2
+rsync -av /home/miguel/ENVIO/ sistema3@192.168.100.110:/home/sistema/Desktop
+
+NODO 2
+---------------------------------------------
+# Eliminar archivos del escritorio antes de sincronizar nuevamente
+rm -rf ~/Desktop/*
+
+NODO 1 (Continuación)
+---------------------------------------------
+# Volver a sincronizar
+rsync -av /home/miguel/ENVIO/ sistema3@192.168.100.110:/home/sistema/Desktop
+
+# Editar el primer archivo
+nano SO1.txt
+
+# Crear clave SSH y copiarla al Nodo 2 para acceso sin contraseña
+ssh-keygen
+cd ~/.ssh
+ssh-copy-id sistema3@192.168.100.110
+
+# Crear nuevo archivo y sincronizar automáticamente
+cd ~/ENVIO
+touch SO101.txt
+nano SO101.txt
+
+# Crear script de sincronización
+cd
+nano sincronizacion.sh
+------------ARCHIVO-----------
+#!/bin/bash
+rsync -avz /home/practica/carpeta1/ practica@IP_DEL_SERVER_SECUNDARIO:/home/practica/carpeta1/
+-------------------------------
+#PERMISOS
+chmod +x /home/practica/sincronizacion.sh
+pwd
+
+# Programar sincronización automática cada minuto
+crontab -e
+-----------TAREA--------------
+* * * * * /home/practica/sync.sh
+----------------------------
+
+
+NODO 2
+---------------------------------------------
+# Verificar si el archivo sincronizado llegó correctamente
+cat ~/Desktop/SO101.txt
+
+
+------------------------------------------------------------------------------------------------------------------------
+PRACTICA 2 — Configuración de Clúster con Pacemaker y Corosync
+------------------------------------------------------------------------------------------------------------------------
+
+EN AMBOS NODOS
+---------------------------------------------
+sudo apt install pacemaker corosync -y
+
+# Permitir puertos necesarios
+sudo ufw allow 5404/udp
+sudo ufw allow 5405/udp
+sudo ufw allow 2224/tcp
+sudo ufw allow 9929/tcp
+
+# Verificar servicios
+sudo systemctl status pacemaker
+sudo systemctl restart pacemaker
+sudo systemctl status pcsd
+sudo systemctl start corosync
+
+#Usuario y autenticación
+sudo passwd hacluster
+---------------------------------------------
+Usuario: hacluster
+Contraseña: hacluster
+#Habilita y prende pcsd:
+sudo systemctl enable --now pcsd
+
+EN EL NODO 1
+---------------------------------------------
+sudo pcs host auth 192.168.100.57 192.168.100.110 -u hacluster
+sudo pcs cluster setup mycluster 192.168.100.57 192.168.100.110
+# Si da error, usar:
+sudo pcs cluster --force setup mycluster 192.168.100.57 192.168.100.110
+
+# Iniciar clúster
+sudo pcs cluster start --all
+
+# Verificar estado
+sudo pcs status
+
+# Si aparece advertencia STONITH
+sudo pcs property set stonith-enabled=false
+
+# Crear IP flotante para el clúster
+sudo pcs resource create clusterIP ocf:heartbeat:IPaddr2 ip=192.168.100.161 cidr_netmask=24 op monitor interval=30s
+#POR ULTIMO
+sudo systemctl start corosync
+sudo systemctl enable corosync
+sudo systemctl start pacemaker
+sudo systemctl enable pacemaker
+sudo pcs cluster start --all
+sudo pcs property set no-quorum-policy=ignore
+
+
+
+-------------------------------------------------------------------------------
+PRACTICA 3 — Instalación y Configuración de Keepalived
+-------------------------------------------------------------------------------
+
+sudo apt install keepalived -y
+
+# Habilitar y verificar servicio
+sudo systemctl enable keepalived
+sudo systemctl start keepalived
+sudo systemctl status keepalived
+
+# Navegar al directorio de configuración
+cd /etc/keepalived
+
+# Editar el archivo de configuración
+sudo nano keepalived.conf
+
+Configuración recomendada
+---------------------------------------------
+SERVIDOR MASTER
+vrrp_instance VI_1 {
+    state BACKUP
+    interface ens33
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 12345
+    }
+    virtual_ipaddress {
+        192.168.100.200/24
+    }
+}
+---------------------------------------------
+CONFIGURACION DEL BACKUP
+vrrp_instance VI_1 {
+    state BACKUP
+    interface ens33
+    virtual_router_id 51
+    priority 100
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass 12345
+    }
+    virtual_ipaddress {
+        192.168.100.200/24
+    }
+}
+-----------------------------------------------
+
+# Aplicar cambios
+sudo systemctl reload keepalived
+sudo systemctl restart keepalived
+
+# Verificar IP flotante (desde navegador)
+# http://192.168.100.200
