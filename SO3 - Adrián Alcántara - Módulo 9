@@ -1,0 +1,297 @@
+PRACTICA 1
+----------------------------------------------
+
+Instalación de Webmin en Debian/Ubuntu
+
+Descargar Webmin:
+wget https://github.com/webmin/webmin/releases/download/2.104/webmin_2.104_all.deb -O webmin.deb
+
+Instalar dependencias necesarias:
+sudo apt update
+sudo apt install -y perl libnet-ssleay-perl libauthen-pam-perl libpam-runtime libio-pty-perl libssl-dev
+
+Instalar Webmin:
+sudo dpkg -i webmin.deb
+
+Corregir posibles problemas de dependencias:
+sudo apt --fix-broken install -y
+
+Reinstalar Webmin si fue necesario:
+sudo dpkg -i webmin.deb
+
+Acceder a Webmin:
+https://192.168.100.132:10000
+
+Webmin 2.104 — Step-by-Step Administration (Short Version)
+
+1. User Administration
+   Go to System → Users and Groups.
+   Create User → fill info → Create.
+   Select a user → Delete User.
+
+2. Service Management (Example: SSH)
+   Go to System → Bootup and Shutdown.
+   Select ssh/sshd service.
+   Click Start, Stop, or Restart.
+
+3. Set a Static IP
+   Go to Networking → Network Configuration.
+   Click Network Interfaces.
+   Select interface → Edit Interface.
+   Choose Static, set IP/netmask/gateway.
+   Save → Apply Configuration.
+
+4. Software Management
+   Go to System → Software Packages.
+   Update: Refresh → Update packages.
+   Install: Install Package → type name → Install.
+   Remove: Search package → Remove.
+
+5. File Management
+   Go to Tools → File Manager.
+   Browse folders.
+   Select file → Edit → Save.
+   Select file/folder → Delete.
+
+6. System Monitoring
+   Go to System → Monitoring.
+   Open dashboard to view CPU, memory, disk, processes.
+
+--------------------------------------------------------------------
+PRACTICA 2
+--------------------------------------------------------------------
+
+MAQUINA SERVIDOR 
+
+# 1. Atualizar sistema e instalar dependências
+sudo apt update
+sudo apt install -y curl gnupg software-properties-common
+
+# 2. Adicionar chave GPG do HashiCorp
+curl -fsSL https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+
+# 3. Adicionar repositório (Linux Mint 22.2 = Ubuntu 22.04 "jammy")
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+# NOTA: Se o comando acima falhar, use "jammy" diretamente:
+echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com jammy main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+
+# 4. Atualizar e instalar
+sudo apt update
+sudo apt install terraform
+
+mkdir SO3-Terra 
+cd SO3-Terra 
+nano main.tf 
+
+-------------ARCHIVO MAIN.tf-------------------------
+terraform {
+  required_providers {
+    digitalocean = {
+      source = "digitalocean/digitalocean"
+      version = ">= 2.0"
+    }
+  }
+}
+
+provider "digitalocean" {
+  token = "TOKEN_AQUI"
+}
+
+resource "digitalocean_droplet" "vm" {
+  name   = "mi-vm"
+  region = "nyc3"
+  size   = "s-1vcpu-1gb"
+  image  = "ubuntu-22-04-x64"
+  ssh_keys = ["fa:3d:ba:c6:cd:c5:de:0d:5f:5d:39:24:c2:52:c0:c4"]
+}
+
+output "ip_publica" {
+  value = digitalocean_droplet.vm.ipv4_address
+}
+----------------------------------------------------------------------
+
+PASO 1 (EN DIGITALOCEAN): Ir a API y generar token, pegarlo en token = "TU_TOKEN_AQUI"
+PASO 2 (EN DIGITALOCEAN): Settings → Security → SSH Keys, generar una y pegarla en ssh_keys
+PASO 3: Ejecución - terraform init && terraform apply
+PASO 4: Conectarse por SSH - ssh root@IP
+
+-----------------------------------------------------------------------
+PRACTICA 3 
+----------------------------------------------------------------------
+
+MAQUINA DIGITAL OCEAN 
+sudo adduser ansible 
+sudo usermod -aG sudo ansible 
+mkdir /home/ansible/.ssh
+chmod 700 /home/ansible/.ssh
+chown -R ansible:ansible /home/ansible/.ssh
+touch /home/ansible/.ssh/authorized_keys
+chmod 600 /home/ansible/.ssh/authorized_keys
+chown -R ansible:ansible /home/ansible/.ssh/authorized_keys
+
+------------------------------------------------------------------------
+MAQUINA SERVIDOR
+ssh-keygen 
+cat /home/miguel/.ssh/id_ed25519.pub 
+# Pegar la clave pública en el authorized_keys de la máquina ansible
+ssh ansible@ip # para crear la huella
+
+------------------------------------------------------------------------
+Maquina WINDOWS 
+net user "ansible" "MiguelSO3*" /add /fullname:"Ansible"
+net localgroup Administrators "ansible" /add
+net localgroup "Remote Management Users" ansible /add
+net user ansible "MiguelSO3*"
+Get-NetConnectionProfile
+Set-NetConnectionProfile -InterfaceAlias "Ethernet0" -NetworkCategory Private
+Enable-PSRemoting -Force
+winrm set winrm/config/service/auth '@{Basic="true"}'
+winrm set winrm/config/service '@{AllowUnencrypted="true"}'
+Set-Item -Path WSMan:\localhost\Service\AllowUnencrypted -Value true
+New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies\System" -Name "LocalAccountTokenFilterPolicy" -PropertyType DWord -Value 1 -Force
+Restart-Service WinRM
+netsh advfirewall firewall add rule name="WinRM HTTP" dir=in action=allow protocol=TCP localport=5985
+
+------------------------------------------------------------------------------
+MAQUINA SERVIDOR 
+sudo add-apt-repository ppa:ansible/ansible -y
+sudo apt update
+sudo apt install ansible -y
+
+sudo nano /etc/ansible/hosts 
+# AGREGAR EL INVENTARIO
+
+-------------------------------------------------------------------------------
+[linux]
+mi-vm-linux ansible_host=104.248.8.112 ansible_user=ansible ansible_ssh_private_key_file=/home/miguel/.ssh/id_ed25519
+
+[windows]
+mi-pc-windows ansible_host=192.168.16.154 ansible_user=ansible ansible_password=MiguelSO3* ansible_connection=winrm ansible_port=5985 ansible_winrm_scheme=http ansible_winrm_transport=basic
+
+----------------------------------------------------------------------------------------
+sudo add-apt-repository ppa:ansible/ansible -y
+sudo apt update
+sudo apt install ansible -y
+
+PRUEBAS
+ansible windows -m win_ping
+ansible linux -m ping
+
+-------------------------------------------------------------------------------------------------
+PRACTICA 4 
+------------------------------------------------------------------------------------------------
+
+MAQUINA SERVIDOR 
+
+PRUEBAS
+ansible windows -m win_ping
+ansible linux -m ping
+
+nano SO3.txt 
+
+# Copiar archivo a Windows
+ansible windows -m win_copy -a "src='/home/miguel/Desktop/SO3.txt' dest='C:/Users/ansible/Desktop/'"
+
+# Mover archivo en Windows
+ansible windows -m win_copy -a "src='C:/Users/ansible/Desktop/SO3.txt' dest='C:/Users/ansible/Documents' remote_src=true"
+
+SI NO FUNCIONA 
+ansible windows -m copy -a "src='C:/Users/ansible/Desktop/SO3.txt' dest='C:/Users/ansible/Documents' remote_src=true"
+
+
+# Reiniciar máquina Linux
+ansible linux -m reboot -b --ask-become-pass
+
+-------------------------------------------------------------------------------------------------
+PRACTICA 5 
+------------------------------------------------------------------------------------------------
+
+MAQUINA SERVIDOR 
+
+# Descargar Notepad++
+wget https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest/download/npp.8.8.8.portable.x64.zip -O ~/Desktop/npp_portable.zip
+
+nano instalacion_notepad.yml 
+
+-----------------------------------------------------------------------------------------
+---
+- name: Instalar Notepad++ portable en Windows
+  hosts: windows
+  gather_facts: no
+  tasks:
+    - name: Crear carpeta destino en Windows
+      win_file:
+        path: C:\Program Files\Notepad++
+        state: directory
+
+    - name: Copiar archivo ZIP de Notepad++ a Windows
+      win_copy:
+        src: /home/miguel/Desktop/npp_portable.zip (CAMBIAR LA RUTA DEPENDIENDO DE DONDE EXTRAISTE EL ARCHIVO) 
+        dest: C:\Program Files\Notepad++\npp_portable.zip
+
+    - name: Descomprimir Notepad++ en Windows
+      win_unzip:
+        src: C:\Program Files\Notepad++\npp_portable.zip
+        dest: C:\Program Files\Notepad++
+        removes: C:\Program Files\Notepad++\npp_portable.zip
+
+    - name: Verificar que Notepad++ fue instalado
+      win_stat:
+        path: C:\Program Files\Notepad++\notepad++.exe
+      register: npp_check
+
+    - name: Mostrar resultado de la verificación
+      debug:
+        msg: "Notepad++ instalado correctamente"
+      when: npp_check.stat.exists
+
+-----------------------------------------------------------------------------------------------
+
+# Instalación 
+ansible-playbook ~/Desktop/instalacion_notepad.yml
+
+# Instalación de NGINX
+nano instalacion_nginx.yml
+
+----------------------------------------------------------------------------------------------
+---
+- name: Instalar y configurar NGINX en Linux
+  hosts: linux
+  become: yes
+  remote_user: ansible
+  tasks:
+    - name: Actualizar la cache de paquetes
+      ansible.builtin.apt:
+        update_cache: yes
+
+    - name: Instalar NGINX
+      ansible.builtin.apt:
+        name: nginx
+        state: present
+
+    - name: Iniciar y habilitar NGINX
+      ansible.builtin.service:
+        name: nginx
+        state: started
+        enabled: yes
+
+    - name: Verificar que NGINX está corriendo
+      ansible.builtin.service_facts:
+
+    - name: Mostrar estado de NGINX
+      debug:
+        msg: "NGINX está activo y funcionando"
+      when: "'nginx.service' in ansible_facts.services and ansible_facts.services['nginx.service'].state == 'running'"
+
+-------------------------------------------------------------------------------------------------------------
+
+ansible-playbook ~/Desktop/instalacion_nginx.yml --ask-become-pass
+
+
+Contenido web:
+/var/www/html/ - Directorio por defecto para contenido web
+
+/usr/share/nginx/html/ - Alternativo para contenido estático
+
+
