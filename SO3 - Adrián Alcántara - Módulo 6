@@ -58,6 +58,11 @@ sudo apt install vsftpd -y
 sudo iptables -F
 sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
 
+# Verificar que el puerto
+sudo ss -tulpn
+ss -tuln | column -t
+
+
 # Bloquear tráfico en puertos 80, 21 y 22
 sudo iptables -A INPUT -p tcp --dport 80 -j DROP
 sudo iptables -A INPUT -p tcp --dport 21 -j DROP
