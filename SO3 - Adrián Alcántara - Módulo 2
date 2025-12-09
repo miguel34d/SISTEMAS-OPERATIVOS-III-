@@ -1,0 +1,123 @@
+# =========================================================
+# PRACTICA 1 – Gestión de repositorios e instalación Bashtop
+# =========================================================
+
+# 1. Actualizar repositorios y paquetes
+sudo apt update -y
+sudo apt upgrade -y
+
+# 2. Listar repositorios usados
+cd /etc/apt/sources.list.d/
+ls
+apt-cache policy
+
+# 3. Buscar bashtop en los repositorios
+apt-cache search bashtop
+
+# 4. Instalar Git (necesario para clonar)
+sudo apt install git -y
+
+# 5. Descargar Bashtop desde GitHub
+cd ~/Desktop
+sudo git clone https://github.com/aristocratos/bashtop
+
+# 6. Compilar e instalar Bashtop
+cd bashtop/DEB
+sudo ./build
+
+# 7. Ejecutar Bashtop
+bashtop
+
+# 8. Desinstalar Bashtop junto a sus configuraciones
+sudo apt remove bashtop --purge -y
+
+# 9. Eliminar dependencias ya no necesarias
+sudo apt autoremove -y
+
+# 10. Borrar la carpeta descargada del repositorio
+cd ~/Desktop
+sudo rm -rf bashtop
+
+
+# =========================================================
+# PRACTICA 2 – Cron, reinicio automático y tarea AT
+# =========================================================
+------------------------CRONTAB-----------------------------
+#GUIA
+crontab -i 
+
+# 1. Crear un cron que actualice el sistema todos los días a las 11 PM
+crontab -e
+# Agregar esta línea:
+0 23 * * * sudo apt update && sudo apt upgrade -y
+
+# 2. Programar reinicio todos los domingos a las 3 AM
+crontab -e
+# Agregar esta línea:
+0 3 * * 0 /sbin/shutdown -r now
+
+#CRONTAB ELIMINAR TAREAS
+crontab -r 
+-----------------------------AT-------------------------------
+# 3. Ver contenido actual de /tmp
+ls /tmp
+
+# 4. Programar con "at" para borrar /tmp en 1 minuto
+at now + 1 minute
+
+# Dentro del prompt escriba:
+# sudo rm -rf /tmp/*
+# y luego presione CTRL+D para confirmar
+
+# 5. Verificar nuevamente el contenido
+ls /tmp
+
+
+# =========================================================
+# PRACTICA 3 – Disco nuevo, formateo, montaje y verificación
+# =========================================================
+
+# 1. Crear en la VM un disco de 20 GB y adjuntarlo (no comando, acción en la VM)
+
+# 2. Reiniciar la máquina
+sudo reboot
+
+# 3. Detectar el nuevo disco (ejemplo: /dev/sdb)
+lsblk
+o 
+sudo fdisk -l 
+
+# 4. Crear partición (ejemplo con /dev/sdb)
+sudo fdisk /dev/sdb
+# Dentro de fdisk:
+# n  → nueva partición
+# p  → primaria
+# 1  → número de partición
+# Enter → aceptar tamaño por defecto
+# w → guardar cambios
+
+#VERIFICAR
+lsblk
+
+# Formatear la partición en EXT4
+sudo mkfs.ext4 /dev/sdb1
+
+# Crear carpeta SO3 en el escritorio
+mkdir ~/Desktop/SO3
+
+# Montar el disco en SO3
+sudo mount /dev/sdb1 ~/Desktop/SO3
+
+# Entrar y crear el archivo
+cd ~/Desktop/SO3
+sudo touch AdrianAlcantara.txt
+
+# Salir y desmontar
+cd ~
+sudo umount ~/Desktop/SO3
+
+# Montarlo ahora en /mnt
+sudo mount /dev/sdb1 /mnt
+
+# Comprobar que el archivo está ahí
+ls /mnt
