@@ -1,0 +1,153 @@
+################################################################################
+#                        COMANDOS UTILIZADOS EN EL MODULO 8                   #
+################################################################################
+
+########################################
+#               PRACTICA 1            #
+########################################
+
+# 1. Actualizar paquetes
+sudo apt update -y
+
+# 2. Instalar Docker
+sudo apt install docker.io -y
+
+# 4. Crear carpeta del volumen persistente
+sudo mkdir -p /home/website
+sudo nano index.html 
+
+# 5. Crear archivo index.html con nombre y matrícula
+<html>
+<body>
+<h1>Nombre: TU_NOMBRE</h1>
+<h1>Matrícula: TU_MATRICULA</h1>
+</body>
+</html>
+
+# 6. Descargar imagen NGINX desde DockerHub
+sudo docker pull nginx:latest
+
+# 7. Crear contenedor con puerto 8888 -> 80 y volumen persistente
+sudo docker run -d --name nginx -p 8888:80 -v /home/website:/usr/share/nginx/html nginx
+
+# 7.1 Listar contenedores Docker
+sudo docker ps -a
+
+# 7.2 Detener contenedor NGINX
+sudo docker stop nginx
+
+# 8. Mensaje final
+http://127.0.0.1:8888"
+
+########################################
+#               PRACTICA 2            #
+########################################
+
+# 1. Descargar imagen de Portainer desde DockerHub
+sudo docker pull portainer/portainer-ce:latest
+
+# 2. Crear el contenedor de Portainer mapeando todos los puertos importantes
+sudo docker volume create portainer_data
+sudo docker run -d -p 8000:8000 -p 9443:9443 --name portainer --restart=always \
+  -v /var/run/docker.sock:/var/run/docker.sock \
+  -v portainer_data:/data portainer/portainer-ce:lts
+
+# URL: https://IP_DE_LA_MAQUINA:9443
+
+# 3. (Dentro de Portainer) 
+# Get Started -> Environment -> SELECCIONAR (Docker Standalone)
+# Copiar el Linux & Windows WSL y pegarlo en Linux
+# EN ENVIRONMENT ADDRESS PONER LA IP DE LA MAQUINA 
+# Connect
+
+# 4. Detener el contenedor NGINX desde Portainer
+# Esto se hace en la interfaz: Containers > mi_nginx > Stop
+
+# 5. Verificar desde consola que está detenido
+sudo docker ps -a
+
+#CREAR UNA CONTENEDOR EN PORTAINER 
+IMAGEN
+httpd:lastet
+CONTENEDOR 
+/usr/local/apache2/htdocs
+HOST 
+/home/website #DONDE ESTA EL INDEX.html
+
+
+
+########################################
+#               PRACTICA 3            #
+########################################
+
+# Requisitos previos: usuario con sudo + Internet
+
+# 1. Instalar Docker Engine
+sudo apt update
+sudo apt install docker.io -y
+docker --version
+
+# 2. Instalar Docker Compose V2
+sudo mkdir -p /usr/lib/docker/cli-plugins
+
+#Agregar repositorio
+sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 \
+  -o /usr/lib/docker/cli-plugins/docker-compose
+
+# Dar permisos de ejecución
+sudo chmod +x /usr/lib/docker/cli-plugins/docker-compose
+
+# Verificar versión
+docker compose version
+
+docker compose version
+
+# 3. Crear proyecto WordPress
+mkdir wordpress-docker && cd wordpress-docker
+nano docker-compose.yml
+
+---------------------# Contenido del archivo docker-compose.yml: #--------------------------------------
+version: '3.8'
+
+services:
+  db:
+    image: mysql:5.7
+    container_name: wordpress_db
+    restart: always
+    environment:
+      MYSQL_DATABASE: wordpress
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppassword
+      MYSQL_ROOT_PASSWORD: rootpassword
+    volumes:
+      - db_data:/var/lib/mysql
+
+  wordpress:
+    image: wordpress:latest
+    container_name: wordpress_app
+    restart: always
+    ports:
+      - "8080:80"
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppassword
+      WORDPRESS_DB_NAME: wordpress
+    volumes:
+      - wordpress_data:/var/www/html
+
+volumes:
+  db_data:
+  wordpress_data:
+-------------------------------------------------------------------------------------
+# 4. Levantar WordPress
+sudo docker compose up -d
+
+# 4.1 Listar contenedores Docker
+sudo docker ps -a
+
+# 4.2 Detener contenedores si es necesario
+sudo docker stop wordpress_app wordpress_db
+
+# 5. Acceder a WordPress
+# http://localhost:8080
