@@ -1,0 +1,136 @@
+Comandos usados práctica 1
+============================================
+
+🔧 CONFIGURACIÓN GRUB Y RECUPERACIÓN
+
+sudo nano /etc/default/grub
+GRUB_TIMEOUT=20
+sudo update-grub
+sudo reboot
+
+🔓 RECUPERAR CONTRASEÑA ROOT
+rw init=/bin/bash
+ctrl-X 
+passwd root
+miguel
+reboot -f
+su
+===========================================
+Comandos usados práctica 2
+============================================
+
+📁 SCRIPTS DE ADMINISTRACIÓN
+
+# Script de Backup
+nano backup.sh
+--------------PRIMER SCRIPT------------------
+#!/bin/bash
+# Script para crear un backup comprimido de /home/tu_usuario
+
+# Obtener fecha y hora actual en formato dd-mm-yyyy:hh:mm
+FECHA=$(date +"%d-%m-%Y:%H:%M")
+
+# Usuario actual
+USUARIO=$(whoami)
+
+# Nombre del archivo
+ARCHIVO="backup-${USUARIO}-${FECHA}.tar.gz"
+
+# Crear comprimido
+tar -czvf /home/$USUARIO/$ARCHIVO /home/$USUARIO
+
+echo "Backup creado correctamente: /home/$USUARIO/$ARCHIVO"
+---------------------------------------------
+sudo chmod +x backup.sh
+cd
+ls
+./backup.sh
+
+# Script de Red
+nano ifconfig.sh
+-----------------SEGUNDO SCRIPT--------------
+#!/bin/bash
+# Script que guarda la salida de ifconfig en un archivo en el escritorio
+
+# Preguntar nombre del archivo
+echo -n "Introduce el nombre que deseas ponerle al archivo: "
+read NOMBRE
+
+# Usuario actual
+USUARIO=$(whoami)
+
+# Directorio Escritorio (Desktop)
+ESCRITORIO="/home/$USUARIO/Desktop"
+
+# Crear archivo con el nombre dado
+ifconfig > "$ESCRITORIO/$NOMBRE.txt"
+
+echo "Archivo creado correctamente en $ESCRITORIO/$NOMBRE.txt"
+-------------------------------------------
+sudo chmod +x ifconfig.sh
+./ifconfig.sh
+===========================================
+Comandos usados práctica 3
+============================================
+
+🖥️  CONFIGURACIÓN SSH - VM LINUX
+
+ifconfig
+sudo apt install openssh-client openssh-server
+sudo systemctl status ssh
+sudo systemctl enable ssh
+sudo systemctl status ssh
+whoami
+
+💻 CONFIGURACIÓN SSH - WINDOWS HOST
+
+ipconfig
+ping 192.168.16.132
+ssh miguel@192.168.16.132
+whoami
+exit
+
+🔑 CONFIGURACIÓN CLAVES SSH
+
+ssh-keygen
+cat C:\Users\HP\.ssh\id_ed25519.pub
+ssh miguel@192.168.16.132
+cd .ssh/
+ls
+sudo nano authorized_keys
+exit
+
+ssh miguel@192.168.16.132
+
+
+
+
+
+
+ADICIONALES CONDICIONALES
+--------------------------------------------------
+#!/bin/bash
+
+read -p "ESCRIBE 'eliminar' si quieres cabiar la direccion ip de el adaptador: " eliminar
+if [ "$eliminar" ==  "eliminar" ]; then
+    echo " RECONOCIENDO FUNCION..."
+else
+    echo "OPCION NO RECONOCIDA"
+    exit
+fi
+
+red=$(ifconfig)
+echo "ESTA ES TU RED $red"
+
+read -p "ESCRIBE TU ADAPTADOR DE RED (EJEMPLO: ens33, lo, ens160, eth0...: " adaptador
+read -p "ESCRIBE TU DIRECCION IP(Y SU MASCARA:: EJEMPLO /30, /20, /8... " ip
+
+if [ "$adaptador" == "salir" ]; then
+   echo "SALIENDO"
+   exit
+fi
+
+sudo ip addr del "$ip" dev "$adaptador"
+echo "GRACIAS POR USAR ESTA ES TU IP"
+ifconfig
+------------------------------------------------------
