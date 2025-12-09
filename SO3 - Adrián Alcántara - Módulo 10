@@ -1,0 +1,107 @@
+# ============================================================
+# PRACTICA 1 – INSTALACION DE ISSABEL PBX (GUIA COMPLETA)
+# ============================================================
+
+# 1. Crear una VM en Digital Ocean
+# - Crear un Droplet con Rocky Linux 8 (64-bit)
+# - Seleccionar plan Basic
+# - Elegir datacenter cercano
+# - Usar password o SSH keys
+# - Guardar la IP pública
+
+# ------------------------------------------------------------
+
+# 2. Conectarse por SSH
+# ssh root@IP_DE_TU_VM
+
+# ------------------------------------------------------------
+
+# 3. Actualizar sistema e instalar wget
+yum update -y
+yum install wget -y
+
+# ------------------------------------------------------------
+
+# 4. Descargar e iniciar la instalación de Issabel PBX
+wget http://repo.issabel.org/issabel5-netinstall.sh
+bash issabel5-netinstall.sh
+
+# ------------------------------------------------------------
+# CONFIGURACIONES DURANTE LA INSTALACION
+# ------------------------------------------------------------
+
+# Seleccionar versión de Asterisk:
+# Asterisk 16  (OBLIGATORIO PARA ESTA PRACTICA)
+
+# Crear contraseña para MariaDB
+
+# Usuario del portal Web:
+# Admin
+# Contraseña: la que cree el estudiante (NO usar admin/admin)
+
+# Seleccionar protocolo de telefonía:
+# SIP (chan_sip)   <— Obligatorio
+# *No usar PJSIP para esta práctica*
+
+# ------------------------------------------------------------
+
+# 5. Detener Fail2Ban para evitar bloqueos de IP
+systemctl stop fail2ban
+
+# ------------------------------------------------------------
+
+# 6. Acceder al portal web de Issabel
+# En el navegador del Host colocar:
+# http://IP_DE_TU_VM
+# Usuario: Admin
+# Contraseña: (la que creó el estudiante)
+
+# ------------------------------------------------------------
+
+# 7. Crear extensiones SIP
+# Ruta:
+# PBX → PBX Configuration → Extensions → Generic SIP Device
+
+# Extension del Estudiante:
+# - Extension: 2221
+# - Secret: Teletubies123$
+# - Protocolo: SIP (chan_sip)
+
+# Extension del Profesor:
+# - Extension: 2220
+# - Secret: Teletubies123$
+# - Protocolo: SIP (chan_sip)
+
+# Luego presionar:
+# Submit → Apply Config
+
+# ------------------------------------------------------------
+
+# 8. Configurar Softphone (Zoiper, MicroSIP, Linphone)
+# Datos para la extension 2221:
+# User / Extension: 2221
+# Password: Teletubies123$
+# Host / IP: IP_DE_TU_VM
+# Protocolo: SIP
+# Puerto: 5060
+
+# ------------------------------------------------------------
+
+# 9. Información que debe llevar el PDF de entrega
+# - IP de la PBX
+# - Usuario del portal Web: Admin
+# - Contraseña del portal
+# - Extensión 2221 (estudiante)
+# - Extensión 2220 (profesor)
+# - Secret: Teletubies123$
+# - Capturas del proceso
+# - Prueba de llamada en vivo con el profesor
+
+# ------------------------------------------------------------
+
+# 10. Nota final
+# El servidor debe permanecer ENCENDIDO TODA LA NOCHE para ser evaluado.
+
+# ============================================================
+# FIN DEL DOCUMENTO
+# ============================================================
