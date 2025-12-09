@@ -1,0 +1,399 @@
+############################################################
+#                  PRÁCTICA 1 - CONFIGURACIÓN NFS          #
+############################################################
+
+
+============================================================
+=                     SERVIDOR NFS                         =
+============================================================
+
+# Instalar el servidor NFS
+sudo apt install nfs-kernel-server -y
+
+# Crear carpeta OS3 dentro del HOME del usuario
+mkdir /home/miguel1/OS3
+
+# Entrar a la carpeta OS3
+cd /home/miguel1/OS3
+
+# Mostrar contenido (debe estar vacía antes de crear archivos)
+ls
+
+# Crear 100 archivos ADRIAN1.txt hasta ADRIAN100.txt
+touch ADRIAN{1..100}.txt
+
+# Editar la configuración de NFS
+sudo nano /etc/exports
+
+# → Agregar esta línea dentro del archivo:
+# /home/miguel1/OS3 192.168.16.0/24(rw,sync,no_subtree_check)
+
+# Aplicar exportaciones configuradas
+sudo exportfs -a
+
+# Ver exportaciones activas
+sudo exportfs -v
+
+# Reiniciar el servicio NFS
+sudo systemctl restart nfs-kernel-server
+
+# Ver la ruta actual solo para validar ubicación
+pwd
+
+
+============================================================
+=                       CLIENTE NFS                        =
+============================================================
+
+# Instalar el cliente NFS
+sudo apt install nfs-common -y
+
+# Crear carpeta donde se montará el recurso NFS
+mkdir /home/miguel2/CARPETA_DESTINO
+
+# Montar carpeta compartida desde el servidor
+# (IP del servidor NFS: 192.168.100.57)
+sudo mount 192.168.100.57:/home/miguel1/OS3 /home/miguel2/CARPETA_DESTINO
+
+# Verificar que se montaron los archivos
+ls /home/miguel2/CARPETA_DESTINO
+
+# Entrar al directorio montado
+cd /home/miguel2/CARPETA_DESTINO
+
+# Editar un archivo para probar escritura
+nano ADRIAN99.txt
+
+
+============================================================
+=               SERVIDOR – VERIFICACIÓN                    =
+============================================================
+
+# Verificar desde el servidor que el archivo se editó
+cat /home/miguel1/OS3/ADRIAN99.txt
+
+
+============================================================
+=           MONTAJE AUTOMÁTICO (CLIENTE - /etc/fstab)      =
+============================================================
+
+# Editar fstab para montar el recurso automáticamente al arrancar
+sudo nano /etc/fstab
+
+# → Agregar esta línea:
+# 192.168.100.57:/home/miguel1/OS3   /home/miguel2/CARPETA_DESTINO   nfs   defaults   0   0
+
+# Verificar montajes activos
+df -h
+
+# Reiniciar la máquina cliente para comprobar el montaje automático
+sudo reboot
+
+# Verificar nuevamente después del reinicio
+df -h
+
+
+
+####################################################################################################
+# PRÁCTICA 2 - CONFIGURACIÓN DE SAMBA (SERVIDOR)
+####################################################################################################
+
+#############################
+# 1. Instalación de paquetes
+#############################
+
+sudo apt update                             # Actualizar lista de paquetes
+sudo apt install samba -y                   # Instalar el servidor Samba
+
+
+###############################################
+# 2. Creación del usuario y grupo para Samba
+###############################################
+
+sudo adduser samba                          # Crear usuario del sistema llamado 'samba'
+sudo addgroup sistema3                      # Crear el grupo 'sistema3'
+sudo usermod -aG sistema3 samba             # Agregar usuario 'samba' al grupo 'sistema3'
+
+
+###############################################
+# 3. Configuración del usuario en Samba
+###############################################
+
+sudo smbpasswd -a samba                     # Crear contraseña para el usuario en Samba
+sudo smbpasswd -e samba                     # Habilitar el usuario en Samba
+
+
+###############################################
+# 4. Crear carpeta compartida
+###############################################
+
+sudo mkdir -p /home/samba/compartida_samba  # Crear carpeta a compartir
+cd /home/samba                              # Entrar al directorio del usuario
+ls -l                                       # Verificar permisos actuales
+
+
+###############################################
+# 5. Asignar permisos correctos
+###############################################
+
+sudo chown -R root:sistema3 compartida_samba  # Propietario root y grupo sistema3
+sudo chmod -R 777 compartida_samba             # Dar permisos completos a todos (práctica)
+
+
+###############################################
+# 6. Crear archivos de prueba
+###############################################
+
+sudo touch compartida_samba/ADRIAN{1..100}.txt  # Crear 100 archivos de ejemplo
+ls compartida_samba                             # Verificar contenido
+
+
+###############################################
+# 7. Editar configuración de Samba
+###############################################
+
+sudo nano /etc/samba/smb.conf               # Abrir el archivo de configuración
+
+
+###################################################
+# CONFIGURACIÓN EN /etc/samba/smb.conf (AGREGAR)
+###################################################
+
+# Pegar esto al final del archivo smb.conf:
+
+[compartida_samba]
+    path = /home/samba/compartida_samba
+    browseable = yes
+    read only = no
+    writable = yes
+    guest ok = no
+    valid users = @sistema3
+
+###############################################
+# 8. Reiniciar servicios
+###############################################
+
+sudo systemctl restart smbd                 # Reiniciar el servicio de Samba
+sudo systemctl enable smbd                  # Habilitar Samba al iniciar el sistema
+
+###############################################
+9. REPETIR ESTOS COMANDOS
+###############################################
+sudo chown -R root:sistema3 compartida_samba  # Propietario root y grupo sistema3
+sudo chmod -R 777 compartida_samba             # Dar permisos completos a todos (práctica)
+
+
+
+###############################################
+# CLIENTE SAMBA (Windows / Linux)
+###############################################
+
+# Acceder desde Windows:
+# Escriba en el explorador:
+
+# \\192.168.100.57
+
+# Acceder desde Linux:
+ls /home/samba/compartida_samba             # Ver contenido
+
+# Por si hay problemas de permisos, volver a ejecutar:
+sudo chown -R root:sistema3 /home/samba/compartida_samba
+sudo chmod -R 777 /home/samba/compartida_samba
+
+##############################################################################################
+#                      PRÁCTICA 3 - DOMAIN CONTROLLER                 
+#############################################################################################
+
+
+=======================================================================
+=                          CONFIGURACIONES BASE                        =
+=======================================================================
+
+# Actualizar sistema
+sudo apt update && sudo apt upgrade -y
+
+# Configurar hostname
+sudo hostnamectl set-hostname dc01.miguel.local
+
+# Verificar hostname
+hostname
+
+
+=======================================================================
+=                           CONFIGURAR NETPLAN                         =
+=======================================================================
+
+# Editar netplan
+sudo nano /etc/netplan/00-installer-config.yaml
+
+########################CONFIGURACION DEL NETPLAN#####################
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    ens33:
+      dhcp4: false
+      addresses:
+        - 192.168.100.10/24
+      gateway4: 192.168.100.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 1.1.1.1
+        search:
+          - miguel.local
+######################################################################
+# Aplicar cambios
+sudo netplan apply
+
+
+=======================================================================
+=                          CONFIGURAR /etc/hosts                       =
+=======================================================================
+
+sudo nano /etc/hosts
+
+# Agregar dentro del archivo:
+# 127.0.0.1 localhost
+# 192.168.100.10 dc01.miguel.local dc01
+
+SOLAMENTE PONER ESOO
+
+
+=======================================================================
+=                SOLUCIÓN PARA ERRORES DE DNS (RESOLVED)               =
+=======================================================================
+
+sudo systemctl stop systemd-resolved
+sudo systemctl disable systemd-resolved
+sudo systemctl mask systemd-resolved
+sudo rm -f /etc/resolv.conf
+sudo touch /etc/resolv.conf
+sudo chmod 644 /etc/resolv.conf
+
+sudo nano /etc/resolv.conf
+# Escribir:
+nameserver 8.8.8.8
+nameserver 1.1.1.1
+
+
+=======================================================================
+=                    INSTALAR SERVICIOS DEL CONTROLADOR                =
+=======================================================================
+
+sudo apt install -y samba samba-ad-dc smbclient winbind libnss-winbind \
+libpam-winbind krb5-user krb5-config dnsutils
+
+#Debes escribir:
+#MIGUEL.LOCAL
+#"Kerberos servers for your realm"
+#Escribe:
+#dc01.miguel.local
+#"Administrative server for your Kerberos realm"
+#Escribe:
+dc01.miguel.local
+
+=======================================================================
+=                       ELIMINAR POSIBLES CONFLICTOS                   =
+=======================================================================
+
+sudo apt remove --purge bind9 bind9utils -y
+sudo pkill -9 named
+sudo pkill -9 dnsmasq
+
+# Verificar que el puerto 53 está libre
+sudo ss -tulpn | grep :53
+
+=======================================================================
+=                 Detén el servicio Samba por si está corriendo        =
+=======================================================================
+sudo systemctl stop samba-ad-dc
+=======================================================================
+=                Mueve o borra cualquier configuración vieja       =
+=======================================================================
+sudo mv /etc/samba/smb.conf /etc/samba/smb.conf.bak
+=======================================================================
+=               Ejecuta el comando para crear el dominio     =
+=======================================================================
+sudo samba-tool domain provision --use-rfc2307 --interactive
+Admin123!
+=======================================================================
+=                  CONFIGURAR KERBEROS (AUTOMÁTICO DE SAMBA)           =
+=======================================================================
+
+sudo cp /var/lib/samba/private/krb5.conf /etc/krb5.conf
+
+
+=======================================================================
+=                 CONFIGURAR DNS DEFINITIVO DEL CONTROLADOR            =
+=======================================================================
+
+sudo nano /etc/resolv.conf
+
+# Escribir dentro:
+nameserver 127.0.0.1
+nameserver 8.8.8.8
+search miguel.local
+domain miguel.local
+
+# Volver inmutable para evitar cambios
+sudo chattr +i /etc/resolv.conf
+
+
+=======================================================================
+=                     INICIAR Y HABILITAR SERVICIOS SAMBA              =
+=======================================================================
+
+sudo systemctl enable samba-ad-dc
+sudo systemctl start samba-ad-dc
+
+
+=======================================================================
+=                            REINICIAR SERVIDOR                        =
+=======================================================================
+
+sudo reboot
+
+
+=======================================================================
+=                  VERIFICACIONES DESPUÉS DEL REINICIO                 =
+=======================================================================
+
+# Verificar estado de Samba
+sudo systemctl status samba-ad-dc
+
+# Verificar DNS
+nslookup miguel.local
+nslookup dc01.miguel.local
+
+# Verificar Kerberos
+kinit Administrator@MIGUEL.LOCAL
+# Contraseña: AdminPassword123!
+klist
+
+=======================================================================
+=                           HABILITAR USER                           =
+=======================================================================
+
+sudo smbpasswd -a lanegracubana
+sudo smbpasswd -e lanegracubana
+
+sudo samba-tool user enable lanegracubana
+
+sudo samba-tool domain passwordsettings set --complexity=off
+
+sudo samba-tool user setpassword lanegracubana --newpassword=" "
+
+# Verificar usuarios creados en AD
+sudo samba-tool user list
+
+# Información técnica del dominio
+sudo samba-tool domain info 127.0.0.1
+
+
+=======================================================================
+=                    UNIR EQUIPOS WINDOWS AL DOMINIO                   =
+=======================================================================
+
+# Usar en PowerShell (como Administrador):
+# Add-Computer -DomainName "MIGUEL.LOCAL" -Credential
