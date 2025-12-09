@@ -1,0 +1,208 @@
+# ============================================
+# PRÁCTICA 1: Configuración de Apache y Hosts Virtuales
+# ============================================
+
+# Actualización e instalación
+sudo apt update 
+sudo apt install apache2 
+
+# Verificación del servicio Apache
+sudo systemctl status apache2
+
+# Creación de directorio del sitio
+cd /var/www
+sudo mkdir holamundo 
+ls
+cd holamundo
+
+# Creación de página web
+sudo nano index.html
+<p>Primera línea</p>
+<p>Segunda línea</p>
+
+# Configuración de host virtual
+cd /etc/apache2/
+ls
+cd sites-available
+cp 000-default.conf holamundo.conf
+nano holamundo.conf 
+--------------------------------------HOLAMUNDO.CONF--------------------------------
+<VirtualHost *:80>
+    ServerAdmin webmaster@localhost
+    ServerName holamundo.com
+    ServerAlias www.holamundo.com
+
+    DocumentRoot /var/www/holamundo
+
+    <Directory /var/www/holamundo>
+        AllowOverride All
+        Require all granted
+    </Directory>
+
+    ErrorLog ${APACHE_LOG_DIR}/holamundo_error.log
+    CustomLog ${APACHE_LOG_DIR}/holamundo_access.log combined
+</VirtualHost>
+-------------------------------------------------------------------------------
+#DESABILITAR SITIO 
+sudo a2dissite nombre_del_sitio.conf
+
+# Activación y recarga del sitio
+cd .. 
+a2ensite holamundo.conf
+systemctl reload apache2.service
+systemctl status apache2.service
+
+# Configuración de DNS local
+sudo nano /etc/hosts
+sudo nano /etc/apache2/ports.conf
+
+# Creación de segundo sitio web
+cd /var/www
+ls
+mkdir data
+ls
+cd data
+sudo nano index.html
+cat index.html 
+
+# Configuración del segundo sitio
+cd /etc/apache2/sites-available
+cp 000-default.conf data.conf
+a2ensite data.conf 
+sudo systemctl reload apache2
+sudo nano /etc/hosts
+
+# =========================================================
+# PRÁCTICA 2: Configuración de Servicios de Red y Correo
+# =========================================================
+__________________________________________________________METODOBASICO_______________________________________________
+#---------------------------------------------------------------
+# 1. ACTUALIZACIÓN E INSTALACIÓN DE POSTFIX Y MAILUTILS
+#---------------------------------------------------------------
+sudo apt update
+sudo apt install postfix mailutils -y
+
+# En la pantalla azul seleccionar:
+# ✔ Internet Site
+# ✔ System mail name: 192.168.100.148  (o el hostname local)
+
+#---------------------------------------------------------------
+# 2. CONFIGURACIÓN DE POSTFIX PARA USAR GMAIL COMO RELAY
+#---------------------------------------------------------------
+sudo nano /etc/postfix/main.cf
+#CAMBIAR LA DIRECCION IP 127.0.0.1 por la ip de la maquina 
+
+# Al final del archivo agregar o verificar estas líneas:
+relayhost = [smtp.gmail.com]:587
+smtp_use_tls = yes
+smtp_sasl_auth_enable = yes
+smtp_sasl_password_maps = hash:/etc/postfix/sasl_passwd
+smtp_sasl_security_options = noanonymous
+smtp_tls_CAfile = /etc/ssl/certs/ca-certificates.crt
+
+# Guardar con: CTRL+O → ENTER → CTRL+X
+
+#---------------------------------------------------------------
+# 3. ARCHIVO DE AUTENTICACIÓN SASL (APP PASSWORD DE GOOGLE)
+#---------------------------------------------------------------
+sudo nano /etc/postfix/sasl_passwd
+[smtp.gmail.com]:587  TU_CORREO@gmail.com:TUPASSWORD_DE_APLICACION
+
+#---------------------------------------------------------------
+# 4. PROTEGER ARCHIVO Y CREAR EL HASH
+#---------------------------------------------------------------
+sudo chmod 600 /etc/postfix/sasl_passwd
+sudo postmap /etc/postfix/sasl_passwd
+
+# Esto genera /etc/postfix/sasl_passwd.db automáticamente
+
+#---------------------------------------------------------------
+# 5. REINICIAR Y HABILITAR POSTFIX
+#---------------------------------------------------------------
+sudo systemctl restart postfix
+sudo systemctl enable postfix
+
+#---------------------------------------------------------------
+# 6. ENVÍO DEL CORREO DE LA PRÁCTICA
+#---------------------------------------------------------------
+# Asunto obligatorio: MambruSeFueALaGuerra
+# Cuerpo: nombre + matrícula
+
+echo -e "Mi nombre es Miguel\nMi matrícula es 2024-XXXX" | mail -s "MambruSeFueALaGuerra" miguelramirezmeli21@gmail.com
+
+
+__________________________________________________________DOMINIO____________________________________________________
+# Verificación de configuración DNS
+cat /etc/bind/db.miguel.lan
+nslookup correo.miguel.lan
+
+# Instalación y configuración de Postfix
+sudo apt install postfix
+sudo nano /etc/postfix/main.cf
+
+# Instalación de cliente de correo
+sudo apt install msmtp 
+ls -la /home/miguel/
+
+# Configuración del cliente MSMTP
+sudo nano /home/miguel/.msmtprc
+sudo chmod 600 .msmtprc 
+
+# Envío de correo de prueba
+nano enviarcorreo.txt
+msmtp os3conadrian@gmail.com < enviarcorreo.txt
+
+# =========================================================
+# PRACTICA 3: INSTALAR SERVIDOR DE IMPRESION (CUPS + PDF)
+# =========================================================
+
+# 1. Instalación de CUPS y extensión PDF
+sudo apt update
+sudo apt install cups -y
+sudo apt install cups-pdf -y
+
+# 2. Configuración de acceso remoto y compartir impresoras
+sudo cupsctl --remote-admin --remote-any --share-printers
+
+# 3. Configuración del firewall para permitir puerto CUPS
+sudo ufw allow 631/tcp
+
+# 4. Acceder a la interfaz web de CUPS desde navegador
+# Abrir en navegador:
+# http://192.168.100.123:631
+#   - Ir a Administrador → Agregar impresora
+#   - Seleccionar "CUPS-PDF"
+#   - Nombre de impresora: so3printer
+#   - Localización: home (o la que prefieras)
+#   - Marcar "Share this printer" para compartir
+#   - Seleccionar impresora genérica y modelo "Generic CUPS-PDF Printer"
+#   - No cambiar opciones → Add Printer
+#   - Copiar el link que genera la impresora para uso en clientes
+
+
+# CONFIGURACIÓN EN WINDOWS CLIENTE
+
+
+# 1. Verificar que el servicio de Cola de Impresión (Print Spooler) esté corriendo
+#   - Presiona Win + R → escribe services.msc → Enter
+#   - Busca "Cola de impresión (Print Spooler)"
+#   - Si está detenido → clic derecho → Iniciar
+#   - Si está en ejecución → clic derecho → Reiniciar
+#   - Tipo de inicio → Automático → Aplicar → Aceptar
+
+# 2. Agregar impresora de red en Windows
+#   - Panel de control → Dispositivos e impresoras → Agregar impresora
+#   - Seleccionar "La impresora que quiero no está en la lista"
+#   - Elegir "Agregar una impresora usando una dirección TCP/IP o nombre de host"
+#   - Ingresar dirección de la impresora compartida en CUPS:
+#       http://192.168.100.146:631/printers/Virtual_PDF_Printer
+#   - Seguir pasos para instalar driver genérico PDF si lo pide
+#   - Finalizar configuración
+
+# 3. Probar impresión
+#   - Abrir documento de Word o cualquier texto
+#   - Imprimir usando la impresora PDF de red
+#   - Verificar que se genere un archivo PDF en el servidor en ~/PDF o /var/spool/cups-pdf/${USER}
+
+
+
