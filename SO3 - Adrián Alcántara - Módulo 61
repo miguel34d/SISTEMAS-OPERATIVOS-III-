@@ -1,0 +1,183 @@
+Autor: Miguel Ramirez Meli
+PRACTICA 1
+
+---------------------------------------------------------------------------------------------
+Autor: Miguel Ramirez Meli
+# Instalamos GnuPG2
+sudo apt install gnupg2 -y
+
+# Generamos una clave GPG nueva
+gpg --full-generate-key
+
+# Listamos las claves disponibles
+gpg --list-keys
+
+# Creamos una carpeta llamada cifrado
+mkdir cifrado
+
+# Listamos los archivos del directorio actual
+ls
+
+# Entramos a la carpeta cifrado
+cd cifrado
+
+# Creamos un archivo de texto
+nano archivo.txt
+
+# Ciframos el archivo usando la clave pública del usuario "miguel"
+gpg -e -r "miguel" archivo.txt
+
+# Mostramos el contenido del archivo original
+cat archivo.txt
+
+# Mostramos el archivo cifrado (contenido en formato GPG)
+cat archivo.txt.gpg
+
+# Desciframos el archivo y lo mostramos en pantalla
+gpg -d archivo.txt.gpg
+
+# Eliminamos el archivo original sin cifrar
+rm archivo.txt
+
+# Desciframos el archivo cifrado y guardamos el resultado en un archivo nuevo
+gpg -d archivo.txt.gpg > desifrado_CORREGIDO.txt
+
+# Mostramos el archivo ya descifrado y corregido
+cat desifrado_CORREGIDO.txt
+
+
+---------------------------------------------------------------------------------------------
+Autor: Miguel Ramirez Meli
+PRACTICA 2
+
+---------------------------------------------------------------------------------------------
+Autor: Miguel Ramirez Meli
+sudo apt install vsftpd -y
+
+# Comando para cambiar a modo legacy en iptables
+sudo iptables -F
+sudo update-alternatives --set iptables /usr/sbin/iptables-legacy
+
+# Bloquear tráfico en puertos 80, 21 y 22
+sudo iptables -A INPUT -p tcp --dport 80 -j DROP
+sudo iptables -A INPUT -p tcp --dport 21 -j DROP
+sudo iptables -A INPUT -p tcp --dport 22 -j DROP
+
+# Habilitar nuevamente el tráfico en puertos 80, 21 y 22
+sudo iptables -D INPUT -p tcp --dport 80 -j DROP
+sudo iptables -D INPUT -p tcp --dport 21 -j DROP
+sudo iptables -D INPUT -p tcp --dport 22 -j DROP
+
+# Configuración con UFW
+sudo ufw reset
+sudo ufw enable
+sudo ufw status
+sudo ufw allow 80/tcp
+sudo ufw reload
+sudo ufw allow 22/tcp
+sudo ufw reload
+sudo ufw allow 21/tcp
+sudo ufw reload
+sudo ufw status
+
+# Bloquear tráfico con UFW
+sudo ufw deny 80/tcp
+sudo ufw reload
+sudo ufw deny 22/tcp
+sudo ufw reload
+sudo ufw deny 21/tcp
+sudo ufw reload
+
+# Habilitar nuevamente el tráfico con UFW
+sudo ufw allow 80/tcp
+sudo ufw allow 22/tcp
+sudo ufw allow 21/tcp
+sudo ufw reload
+sudo ufw status
+
+---------------------------------------------------------------------------------------------
+Autor: Miguel Ramirez Meli
+PRACTICA 3
+
+---------------------------------------------------------------------------------------------
+Autor: Miguel Ramirez Meli
+sudo apt install snort -y
+192.168.16.0/24
+ifconfig
+sudo nano /etc/snort/snort.conf
+#Buscar línea:
+ipvar HOME_NET any
+
+#Cámbiala a:
+ipvar HOME_NET 192.168.16.0/24
+
+sudo nano /etc/snort/rules/local.rules
+---------------------AñADIR--------------------
+alert tcp any any -> $HOME_NET 21 (msg:"TRAFICO hacia FTP puerto 21"; sid:1000002; rev:1;)
+alert tcp any any -> $HOME_NET 22 (msg:"TRAFICO hacia SSH puerto 22"; sid:1000003; rev:1;)
+alert tcp any any -> $HOME_NET 80 (msg:"TRAFICO hacia HTTP puerto 80"; sid:1000004; rev:1;)
+
+#ICMP
+alert icmp any any -> $HOME_NET any (msg:"ALERTA: Trafico ICMP detectado hacia el host"; itype:8; sid:1000001; rev:2;)
+
+
+sudo snort -A console -q -c /etc/snort/snort.conf -i ens33
+
+---------------------------------------------------------------------------------------------
+Autor: Miguel Ramirez Meli
+PRACTICA 4
+
+---------------------------------------------------------------------------------------------
+Autor: Miguel Ramirez Meli
+# Instalar Google Authenticator (PAM module)
+# Actualizar repos e instalar el módulo
+sudo apt update
+sudo apt install libpam-google-authenticator -y
+
+# ---------------------------------------------------------
+
+# Ejecutar Google Authenticator
+google-authenticator
+
+# Responder las preguntas:
+# Do you want authentication tokens to be time-based? (y/n) y
+
+# Luego aparecerá:
+# ✔ Código QR
+# ✔ Secret key
+# ✔ Emergency scratch codes
+# Escanear el código QR con Google Authenticator del celular
+
+# Responder:
+# Update the .google_authenticator file? (y/n) y
+# Disallow multiple uses? (y/n) y
+# Increase rate limiting? (y/n) y
+# Enable token reuse limiting? (y/n) y
+
+# Usuario ya tiene configurado 2FA
+
+# ---------------------------------------------------------
+# Editar el archivo PAM
+sudo nano /etc/pam.d/sshd
+
+# Añadir al inicio del archivo:
+# auth required pam_google_authenticator.so
+
+# ---------------------------------------------------------
+
+# Configurar SSH para solicitar 2FA
+# Editar configuración SSH
+sudo nano /etc/ssh/sshd_config
+
+# Las líneas deben quedar exactamente así:
+ChallengeResponseAuthentication yes
+PasswordAuthentication yes
+UsePAM yes
+KbdInteractiveAuthentication yes
+
+# Guardar y salir
+
+# ---------------------------------------------------------
+
+#Reiniciar el servicio SSH
+sudo systemctl restart ssh
