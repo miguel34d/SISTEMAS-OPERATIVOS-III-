@@ -179,6 +179,9 @@ sudo nano /etc/samba/smb.conf               # Abrir el archivo de configuración
    create mask = 0770
    directory mask = 0770
 
+sudo chown -R lanegracubana:lanegracubana /srv/compartida
+sudo chmod -R 770 /srv/compartida
+
 
 ###############################################
 # 8. Reiniciar servicios
