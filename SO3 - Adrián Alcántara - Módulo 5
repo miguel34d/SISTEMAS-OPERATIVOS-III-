@@ -2,7 +2,9 @@
 ---------------------------------------------
 PRACTICA 1 — Sincronización con rsync y crontab
 ---------------------------------------------
-
+EN LOS DOS NODOS INSTALAR OPENSSH 
+sudo apt install openssh-server
+sudo apt install openssh-client
 NODO 1
 ---------------------------------------------
 mkdir ENVIO
