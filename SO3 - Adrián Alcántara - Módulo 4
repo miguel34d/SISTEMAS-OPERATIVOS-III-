@@ -156,6 +156,7 @@ sudo nano /etc/postfix/sasl_passwd
 sudo chmod 600 /etc/postfix/sasl_passwd
 sudo postmap /etc/postfix/sasl_passwd
 
+#eliminar el relayhost = que sale doble
 # Esto genera /etc/postfix/sasl_passwd.db automáticamente
 
 #---------------------------------------------------------------
