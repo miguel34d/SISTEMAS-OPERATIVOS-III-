@@ -72,6 +72,48 @@ a2ensite data.conf
 sudo systemctl reload apache2
 sudo nano /etc/hosts
 
+===============================NGINIX===============================
+# 1. Actualizar paquetes
+sudo apt update -y
+
+# 2. Instalar NGINX
+sudo apt install nginx -y
+
+# 3. Iniciar y habilitar el servicio
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# 4. Crear carpeta del sitio
+sudo mkdir -p /var/www/sitio
+sudo chown -R $USER:$USER /var/www/sitio
+
+# 5. Crear página simple
+echo "Hola desde NGINX" > /var/www/sitio/index.html
+
+# 6. Crear archivo de configuración del sitio
+sudo bash -c 'cat > /etc/nginx/sites-available/sitio <<EOF
+server {
+    listen 80;
+
+    root /var/www/sitio;
+    index index.html;
+
+    location / {
+        try_files \$uri \$uri/ =404;
+    }
+}
+EOF'
+
+# 7. Activar el sitio
+sudo ln -s /etc/nginx/sites-available/sitio /etc/nginx/sites-enabled/
+
+# 8. Probar configuración
+sudo nginx -t
+
+# 9. Recargar NGINX
+sudo systemctl reload nginx
+=====================================================================
+
 # =========================================================
 # PRÁCTICA 2: Configuración de Servicios de Red y Correo
 # =========================================================
