@@ -94,6 +94,21 @@ sudo nmcli connection up "Wired connection 1"
 cd /etc/netplan
 ls
 sudo nano 01-network-manager-all.yaml
+----------------------------YML-----------------------------
+network:
+  version: 2
+  renderer: networkd
+  ethernets:
+    enp0s3:
+      dhcp4: no
+      addresses:
+        - 192.168.1.10/24
+      gateway4: 192.168.1.1
+      nameservers:
+        addresses:
+          - 8.8.8.8
+          - 1.1.1.1
+-----------------------------------------------------------
 sudo netplan apply
 ip route
 ping 8.8.8.8
