@@ -50,6 +50,15 @@ crontab -i
 crontab -e
 # Agregar esta línea:
 0 23 * * * sudo apt update && sudo apt upgrade -y
+------------------------------------------GUIA---------------------------------------------------------
+1 m ------ corresponde al minuto en que se va a ejecutar el script, el valor es de 0 a 59
+2 h ------ la hora exacta, se maneja en formato de 24 horas, valores de 0 a 23, siendo 0 medianoche
+3 dom ---- día del mes; ej: se puede especificar 15 si se quiere ejecutar cada 15 días
+4 mon ---- mes del año, de 1 a 12
+5 dow ---- día de la semana, numérico (0 a 6, donde 0 es domingo) o las 3 primeras letras en inglés:
+           mon, tue, wed, thu, fri, sat, sun
+-------------------------------------------------------------------------------------------------------
+cat /etc/crontab
 
 # 2. Programar reinicio todos los domingos a las 3 AM
 crontab -e
