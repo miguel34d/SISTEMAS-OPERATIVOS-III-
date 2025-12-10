@@ -100,6 +100,10 @@ sudo ufw allow 21/tcp
 sudo ufw reload
 sudo ufw status
 
+
+
+Bloquear pings entrantes
+sudo iptables -A INPUT -p icmp --icmp-type echo-request -j DROP
 ---------------------------------------------------------------------------------------------
 Autor: Miguel Ramirez Meli
 PRACTICA 3
@@ -136,6 +140,7 @@ PRACTICA 4
 Autor: Miguel Ramirez Meli
 # Instalar Google Authenticator (PAM module)
 # Actualizar repos e instalar el módulo
+sudo apt install openssh-server
 sudo apt update
 sudo apt install libpam-google-authenticator -y
 
