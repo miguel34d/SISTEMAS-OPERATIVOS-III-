@@ -295,3 +295,21 @@ Contenido web:
 /usr/share/nginx/html/ - Alternativo para contenido estático
 
 
+ansible -i hosts.ini servidores -b -m apt -a "update_cache=yes upgrade=dist"
+---
+- name: Instalar un software en servidores
+  hosts: servidores
+  become: yes
+
+  tasks:
+    - name: Actualizar lista de paquetes
+      apt:
+        update_cache: yes
+
+    - name: Instalar paquete deseado
+      apt:
+        name: htop
+        state: present
+
+
+
