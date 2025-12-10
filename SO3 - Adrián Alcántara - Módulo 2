@@ -70,12 +70,17 @@ crontab -r
 -----------------------------AT-------------------------------
 # 3. Ver contenido actual de /tmp
 ls /tmp
+#INSTALAR AT 
+sudo apt install at 
+
+#ENTRAR AL SUDO 
+sudo su
 
 # 4. Programar con "at" para borrar /tmp en 1 minuto
 at now + 1 minute
 
 # Dentro del prompt escriba:
-# sudo rm -rf /tmp/*
+# rm -rf /tmp/*
 # y luego presione CTRL+D para confirmar
 
 # 5. Verificar nuevamente el contenido
@@ -126,7 +131,7 @@ cd ~
 sudo umount ~/Desktop/SO3
 
 # Montarlo ahora en /mnt
-sudo mount /dev/sdb1 /mnt
+sudo mount /dev/sda1 /mnt
 
 # Comprobar que el archivo está ahí
 ls /mnt
