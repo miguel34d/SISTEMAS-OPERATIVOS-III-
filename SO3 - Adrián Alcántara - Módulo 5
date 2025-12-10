@@ -135,21 +135,21 @@ sudo nano keepalived.conf
 
 Configuración recomendada
 ---------------------------------------------
-SERVIDOR MASTER
 vrrp_instance VI_1 {
-    state BACKUP
+    state MASTER
     interface ens33
     virtual_router_id 51
-    priority 100
+    priority 150
     advert_int 1
     authentication {
         auth_type PASS
         auth_pass 12345
     }
     virtual_ipaddress {
-        192.168.100.200/24
+        192.168.100.200
     }
 }
+
 ---------------------------------------------
 CONFIGURACION DEL BACKUP
 vrrp_instance VI_1 {
@@ -163,12 +163,14 @@ vrrp_instance VI_1 {
         auth_pass 12345
     }
     virtual_ipaddress {
-        192.168.100.200/24
+        192.168.100.200
     }
 }
 -----------------------------------------------
 
 # Aplicar cambios
+sudo systemctl enable keepalived
+sudo systemctl start keepalived
 sudo systemctl reload keepalived
 sudo systemctl restart keepalived
 
