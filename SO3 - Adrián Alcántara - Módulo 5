@@ -134,7 +134,7 @@ cd /etc/keepalived
 sudo nano keepalived.conf
 
 Configuración recomendada
----------------------------------------------
+-----------------------CONFIGURACION DEL MASTER----------------------
 vrrp_instance VI_1 {
     state MASTER
     interface ens33
@@ -146,12 +146,11 @@ vrrp_instance VI_1 {
         auth_pass 12345
     }
     virtual_ipaddress {
-        192.168.100.200
+        192.168.100.200/24
     }
 }
 
----------------------------------------------
-CONFIGURACION DEL BACKUP
+-------------------CONFIGURACION DEL BACKUP--------------------------
 vrrp_instance VI_1 {
     state BACKUP
     interface ens33
@@ -163,7 +162,7 @@ vrrp_instance VI_1 {
         auth_pass 12345
     }
     virtual_ipaddress {
-        192.168.100.200
+        192.168.100.200/24
     }
 }
 -----------------------------------------------
