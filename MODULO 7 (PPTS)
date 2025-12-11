@@ -1,0 +1,191 @@
+🌐 Comandos de Sistemas de Archivos en Red (NFS y SAMBA)
+1. Network File System (NFS)
+Bash
+
+# ===============================================
+# 1. NFS (Network File System)
+# ===============================================
+
+# --- 2. Configuración del Servidor NFS ---
+
+# Paso 1: Instalar NFS Server
+sudo apt update
+sudo apt install nfs-kernel-server -y
+
+# Paso 2: Crear y configurar permisos de la carpeta compartida
+sudo mkdir -p /mnt/sistemasoperativos3
+# Cambiar propietario a 'nobody:nogroup' para manejo de permisos por NFS
+sudo chown nobody:nogroup /mnt/sistemasoperativos3
+sudo chmod 777 /mnt/sistemasoperativos3
+
+# Paso 3: Configurar /etc/exports (Definir qué y a quién compartir)
+sudo nano /etc/exports
+
+# Contenido a agregar en /etc/exports (ejemplo para la red 192.168.16.0/24):
+# /mnt/sistemasoperativos3 192.168.16.0/24(rw,sync,no_subtree_check)
+# Opciones: rw (Lectura/Escritura), sync (escritura inmediata), no_subtree_check
+
+# Paso 4: Exportar y reiniciar servicio
+sudo exportfs -a # Aplica inmediatamente los cambios sin reiniciar
+sudo systemctl restart nfs-kernel-server
+
+# --- 3. Configuración del Cliente NFS ---
+
+# Paso 1: Instalar NFS Common
+sudo apt update
+sudo apt install nfs-common -y
+
+# Paso 2: Crear punto de montaje local
+sudo mkdir -p /mnt/sistemasoperativos3_cliente
+
+# Paso 3: Montar carpeta remota (Reemplazar IP por la del servidor NFS)
+sudo mount 192.168.16.3:/mnt/sistemasoperativos3 /mnt/sistemasoperativos3_cliente
+
+# Paso 4: Verificar acceso
+ls /mnt/sistemasoperativos3_cliente
+
+# --- 4. Prueba de funcionamiento ---
+# En el cliente:
+# nano /mnt/sistemasoperativos3_cliente/prueba.txt
+# En el servidor (debe aparecer el contenido):
+# cat /mnt/sistemasoperativos3/prueba.txt
+2. SAMBA (Carpeta Compartida Simple)
+Bash
+
+# ===============================================
+# 2. SAMBA (Carpeta Compartida Simple)
+# ===============================================
+
+# 1. Crear el usuario del sistema 'samba'
+sudo adduser samba
+
+# 2. Crear y configurar permisos para la carpeta compartida
+mkdir -p /home/samba/compartida
+sudo chown samba:samba /home/samba/compartida
+sudo chmod 0770 /home/samba/compartida
+
+# 3. Crear el usuario Samba (establecer contraseña para acceso en red)
+sudo smbpasswd -a samba
+
+# 4. Configurar el archivo smb.conf
+sudo nano /etc/samba/smb.conf
+
+# Agregar al final del archivo:
+# [compartida]
+#    path = /home/samba/compartida # Ruta absoluta de la carpeta compartida
+#    browseable = yes              # Permite que la carpeta sea visible en la red
+#    read only = no                # Permite lectura y escritura
+#    valid users = samba           # Solo el usuario 'samba' puede acceder
+#    guest ok = no                 # No se permite acceso como invitado
+#    writable = yes                # Permite que el usuario autenticado escriba
+#    create mask = 0770            # Permisos para archivos nuevos
+#    directory mask = 0770         # Permisos para carpetas nuevas
+
+# 5. Reiniciar el servicio de Samba
+sudo systemctl restart smbd
+
+# 6. Verificar usuarios activos y conectados
+# Para ver los usuarios creados en Samba:
+# pdbedit -L
+# Para ver detalles de un usuario específico:
+# pdbedit -Lv samba
+
+# 7. Acceder desde Windows
+# \\IP_DEL_SERVIDOR_LINUX\compartida
+3. SAMBA4 como Controlador de Dominio (DC)
+Bash
+
+# ===============================================
+# 3. SAMBA4 (Controlador de Dominio - DC)
+# ===============================================
+
+# --- A. CONFIGURACIÓN DEL SERVIDOR SAMBA4 DC ---
+
+# Paso 1: Preparación Inicial
+# Actualizar sistema
+sudo apt update && sudo apt upgrade -y
+# Configurar Hostname (CRÍTICO antes de la provisión)
+sudo hostnamectl set-hostname dc01.miguel.local
+# Verificar: hostname
+
+# Paso 2: Configurar Red Estática (Usando Netplan)
+# Identificar adaptador de red (ej: ens33)
+# ip link show | grep "state UP" | awk -F: '{print $2}' | tr -d ' '
+sudo nano /etc/netplan/00-installer-config.yaml
+# Contenido de netplan (ejemplo):
+# network:
+#   version: 2
+#   renderer: networkd
+#   ethernets:
+#     ens33: 
+#       dhcp4: no
+#       addresses: [192.168.100.10/24]
+#       gateway4: 192.168.100.1
+#       nameservers:
+#         addresses: [192.168.100.10, 8.8.8.8]
+#         search: [miguel.local]
+# Aplicar configuración:
+sudo netplan apply
+
+# Configurar hosts para evitar conflictos
+sudo nano /etc/hosts
+# Agregar: 192.168.100.10 dc01.miguel.local dc01
+
+# Paso 3: Preparar Sistema - EVITAR ERROR DNS
+# Detener y deshabilitar systemd-resolved
+sudo systemctl stop systemd-resolved
+sudo systemctl disable systemd-resolved
+sudo systemctl mask systemd-resolved
+# Crear resolv.conf manualmente (DNS temporal para instalación)
+sudo rm -f /etc/resolv.conf
+sudo touch /etc/resolv.conf
+sudo chmod 644 /etc/resolv.conf
+# sudo nano /etc/resolv.conf -> nameserver 8.8.8.8
+
+# Paso 4: Instalación de Samba4
+# Instalar paquetes necesarios
+sudo apt install -y samba samba-ad-dc smbclient winbind libnss-winbind libpam-winbind krb5-user krb5-config dnsutils
+# ELIMINAR POSIBLES CONFLICTOS DNS (bind9, dnsmasq)
+sudo apt remove --purge bind9 bind9utils -y
+sudo pkill -9 named
+sudo pkill -9 dnsmasq
+# Verificar puerto 53 libre: sudo ss -tulpn | grep :53
+
+# Paso 5: Crear Dominio (Provisioning)
+sudo samba-tool domain provision --use-rfc2307 --interactive
+# Usar: Realm: MIGUEL.LOCAL, Domain: MIGUEL, Server Role: dc, DNS backend: SAMBA_INTERNAL, DNS forwarder: 8.8.8.8
+
+# Paso 6: Configuración Post-Instalación
+# Configurar Kerberos
+sudo cp /var/lib/samba/private/krb5.conf /etc/krb5.conf
+# Configurar DNS DEFINITIVO (Apuntar a sí mismo)
+sudo nano /etc/resolv.conf
+# Escribir: nameserver 127.0.0.1, search miguel.local, domain miguel.local
+# Hacer inmutable: sudo chattr +i /etc/resolv.conf
+# Iniciar servicios
+sudo systemctl enable samba-ad-dc
+sudo systemctl start samba-ad-dc
+# REINICIAR LA MAQUINA (Recomendado)
+
+# Paso 7: Verificación Completa
+# Verificar estado: sudo systemctl status samba-ad-dc
+# Verificar DNS: nslookup miguel.local, nslookup dc01.miguel.local
+# Verificar Kerberos: kinit Administrator@MIGUEL.LOCAL
+# Verificar usuarios: sudo samba-tool user list
+
+# --- B. CONFIGURACIÓN DEL CLIENTE WINDOWS ---
+# Configurar DNS en Windows: DNS preferido: 192.168.100.10, DNS alternativo: 8.8.8.8
+# Unir al Dominio:
+# PowerShell como Administrador:
+# Add-Computer -DomainName "MIGUEL.LOCAL" -Credential "MIGUEL\Administrator" -Restart
+
+# --- C. ADMINISTRACIÓN DE USUARIOS Y GRUPOS ---
+# CREACION DE USUARIOS
+# sudo samba-tool user create nombre_usuario --given-name="Nombre" --surname="Apellido" --mail=usuario@miguel.local
+# HABILITAR/DESHABILITAR USER
+# sudo samba-tool user enable nombre_usuario
+# sudo samba-tool user disable nombre_usuario
+# CREACION DE GRUPOS
+# sudo samba-tool group add "NombreGrupo"
+# AÑADIR A GRUPO
+# sudo samba-tool group addmembers "NombreGrupo" usuario1,usuario2
