@@ -1,0 +1,161 @@
+🐳 Comandos de Docker y Despliegue con Contenedores
+1. Instalación de Docker y Comandos Básicos
+Bash
+
+# ===============================================
+# 1. Instalación de Docker
+# ===============================================
+
+# --- Instalación en Ubuntu / Debian ---
+sudo apt update
+sudo apt install -y docker.io
+
+# Habilitar e iniciar el servicio
+sudo systemctl enable docker
+sudo systemctl start docker
+
+# Verificar la versión instalada
+docker --version
+1.1. Comandos Básicos con httpd (Apache)
+Bash
+
+# ===============================================
+# 1.1. Comandos básicos con httpd (Apache)
+# ===============================================
+
+# a) Descargar la imagen
+docker pull httpd
+
+# b) Ejecutar (modo detached -d) y mapear puerto 8080 (Host) → 80 (Contenedor)
+docker run -d --name miweb -p 8080:80 httpd
+
+# c) Verificar contenedor activo
+docker ps
+# Verificar respuesta del servicio:
+curl -I http://localhost:8080
+
+# d) Logs del contenedor
+docker logs miweb
+
+# e) Detener y eliminar contenedor
+docker stop miweb
+docker rm miweb
+
+# f) Forzar eliminación (si está corriendo o no responde)
+docker rm -f miweb
+1.2. Mapeo de Puertos y Volúmenes
+Bash
+
+# ===============================================
+# 1.2. Mapeo de Puertos y Volúmenes
+# ===============================================
+
+# a) Mapear un puerto específico (Host 8080 -> Contenedor 80)
+docker run -d --name miweb -p 8080:80 httpd
+
+# b) Montar carpeta local como sitio web
+# -v: Mapea un volumen. Coloca tu index.html en /ruta/local.
+docker run -d --name miweb -p 8080:80 -v /ruta/local:/usr/local/apache2/htdocs httpd
+1.3. Gestión de Recursos y Limpieza
+Bash
+
+# ===============================================
+# 1.3. Gestión de Recursos y Limpieza
+# ===============================================
+
+# Listar y eliminar imágenes
+docker images
+docker rmi httpd
+
+# Listar contenedores (activos y todos)
+docker ps
+docker ps -a
+
+# Ver y limpiar recursos (usar con cuidado)
+docker container prune  # Elimina contenedores detenidos
+docker image prune      # Elimina imágenes sin usar
+docker volume prune     # Elimina volúmenes sin usar
+docker system prune -a  # Elimina todos los recursos no utilizados
+2. Gestión Gráfica con Portainer
+Bash
+
+# ===============================================
+# 2. Portainer (Interfaz Gráfica)
+# ===============================================
+
+# 1. Agregar tu usuario al grupo docker (Evita usar sudo)
+sudo usermod -aG docker $USER
+newgrp docker # Aplicar el cambio de grupo inmediatamente
+
+# 2. Correr Portainer
+# Crear el volumen de datos
+docker volume create portainer_data
+
+# Ejecutar el contenedor de Portainer (puertos 9000 y 9443)
+docker run -d \
+-p 9000:9000 -p 9443:9443 \
+--name portainer \
+--restart=always \
+-v /var/run/docker.sock:/var/run/docker.sock \
+-v portainer_data:/data \
+portainer/portainer-ce:latest
+
+# Acceso a Portainer: http://localhost:9000
+3. Despliegue de WordPress con Docker Compose
+Bash
+
+# ===============================================
+# 3. WordPress con Docker Compose
+# ===============================================
+
+# 1. Instalar Docker Compose V2
+# Crear el directorio para los plugins (si no existe)
+sudo mkdir -p /usr/lib/docker/cli-plugins
+# Descargar el binario oficial
+sudo curl -SL https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64 -o /usr/lib/docker/cli-plugins/docker-compose
+# Dar permisos de ejecución
+sudo chmod +x /usr/lib/docker/cli-plugins/docker-compose
+# Verificar instalación: docker compose version
+
+# 2. Crear proyecto WordPress
+mkdir wordpress-docker && cd wordpress-docker
+nano docker-compose.yml
+
+# Contenido del archivo docker-compose.yml:
+# version: '3.8'
+# 
+# services:
+#   db:
+#     image: mysql:5.7
+#     container_name: wordpress_db
+#     restart: always
+#     environment:
+#       MYSQL_DATABASE: wordpress
+#       MYSQL_USER: wpuser
+#       MYSQL_PASSWORD: wppassword
+#       MYSQL_ROOT_PASSWORD: rootpassword
+#     volumes:
+#       - db_data:/var/lib/mysql
+# 
+#   wordpress:
+#     image: wordpress:latest
+#     container_name: wordpress_app
+#     restart: always
+#     ports:
+#       - "8080:80"
+#     environment:
+#       WORDPRESS_DB_HOST: db:3306
+#       WORDPRESS_DB_USER: wpuser
+#       WORDPRESS_DB_PASSWORD: wppassword
+#       WORDPRESS_DB_NAME: wordpress
+#     volumes:
+#       - wordpress_data:/var/www/html
+# 
+# volumes:
+#   db_data:
+#   wordpress_data:
+
+# 3. Levantar el servicio
+docker compose up -d
+
+# Acceso a WordPress: http://localhost:8080
