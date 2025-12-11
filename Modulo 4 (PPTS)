@@ -1,0 +1,341 @@
+1. Administración de Servicios HTTP (Apache2, Nginx y WordPress)
+1.1. Apache2 (Virtual Hosts)
+Bash
+
+# ===============================================
+# 1.1. Apache2 (Virtual Hosts)
+# ===============================================
+
+# Instalar Apache2
+sudo apt install apache2
+
+# Verificar el estado
+sudo systemctl status apache2
+
+# Permitir Apache en el firewall (UFW)
+sudo ufw allow 'Apache'
+
+# Crear directorios para los sitios web
+mkdir /var/www/sistemasoperativos2
+mkdir /var/www/sistemasoperativos3
+
+# Crear archivos index.html (ejemplo de contenido en Imagen image_1b9c32.png)
+sudo nano /var/www/sistemasoperativos2/index.html
+sudo nano /var/www/sistemasoperativos3/index.html
+
+# Crear archivos de configuración de Virtual Host
+nano /etc/apache2/sites-available/sistemasoperativos2.conf
+nano /etc/apache2/sites-available/sistemasoperativos3.conf
+
+# Contenido del VirtualHost (sistemasoperativos2.conf):
+# <VirtualHost *:80>
+#     ServerName sistemasoperativos2.edu.do
+#     ServerAdmin admin@sistemasoperativos2.edu.do
+#     ServerAlias www.sistemasoperativos2.edu.do
+#     DocumentRoot /var/www/sistemasoperativos1 # O usar sistemasoperativos2
+#     DirectoryIndex index.html 
+# </VirtualHost>
+
+# Activar el sitio y listar activos
+a2ensite sistemasioerativos2.conf
+ls /etc/apache2/sites-enabled/
+
+# Deshabilitar un sitio
+# a2dissite sistemasoperativos2.conf
+
+# Recargar la configuración de Apache
+sudo systemctl reload apache2
+
+# Comprobar los Virtual Hosts activos
+# apachectl -s
+
+# Configurar resolución de nombres localmente (Opcional, si no se usa DNS)
+# Agregar IP y dominio en /etc/hosts
+# sudo nano /etc/hosts
+1.2. NGINX (Servidor Web)
+Bash
+
+# ===============================================
+# 1.2. NGINX (Servidor Web)
+# ===============================================
+
+# Instalación del servidor Nginx
+sudo apt install nginx -y 
+
+# Encender y habilitar el servidor
+sudo systemctl start nginx
+sudo systemctl enable nginx
+
+# Crear carpeta de la página
+sudo mkdir /var/www/holamundo
+
+# Crear archivo de configuración (Virtual Host)
+sudo nano /etc/nginx/sites-available/holamundo.conf
+
+# Contenido del archivo holamundo.conf:
+# server {
+#     listen 80;
+#     server_name tudominio.com www.tudominio.com;
+#     root /var/www/misitio; # Usar /var/www/holamundo si se creó esa carpeta
+#     index index.html;
+# }
+
+# Activar el sitio (crear enlace simbólico)
+sudo ln -s /etc/nginx/sites-available/misitio /etc/nginx/sites-enabled/ # Cambiar 'misitio' por 'holamundo.conf'
+
+# Crear tu página HTML (ejemplo en Imagen image_1b9c32.png)
+# sudo nano /var/www/misitio/index.html
+
+# Probar la configuración y recargar Nginx
+sudo nginx -t
+sudo systemctl reload nginx
+
+# Abrir el firewall (UFW)
+sudo ufw allow 'Nginx HTTP'
+1.3. Administración y Configuración de WordPress
+Bash
+
+# ===============================================
+# 1.3. WordPress (con Apache/MariaDB/PHP)
+# ===============================================
+
+# 1. Instalar MariaDB (Servidor y Cliente)
+sudo apt install mariadb-server mariadb-client 
+# Verificar estado: sudo systemctl status mariadb 
+# Asegurar instalación: mysql_secure_installation 
+
+# 2. Instalar PHP y módulos necesarios
+sudo apt install php libapache2-mod-php php-mysql
+
+# 3. Crear la base de datos (Entrar a MySQL/MariaDB)
+mysql -u root -p
+
+# Comandos SQL (Ejemplo en Imagen image_1b9c2f.png):
+# CREATE DATABASE wordpress;
+# CREATE USER 'wpuser'@'localhost' IDENTIFIED BY 'password_seguro'; # ¡Usar contraseña segura!
+# GRANT ALL PRIVILEGES ON wordpress.* TO 'wpuser'@'localhost';
+# FLUSH PRIVILEGES;
+# EXIT;
+
+# 4. Instalar WordPress
+# Descargar WordPress
+wget -c http://wordpress.org/latest.tar.gz
+
+# Mover, descomprimir y dar permisos
+mv latest.tar.gz /var/www/
+cd /var/www
+tar -xzvf latest.tar.gz 
+sudo chown -R www-data:www-data wordpress/ 
+sudo chmod -R 775 wordpress 
+
+# 5. Configurar Apache para WordPress
+cd /etc/apache2/sites-available
+cp 000-default.conf wordpress.conf
+sudo nano wordpress.conf
+
+# Cambiar dentro de wordpress.conf:
+# DocumentRoot /var/www/wordpress
+# ServerName localhost
+# ServerAdmin webmaster@localhost
+
+# Habilitar el sitio (si no se hizo con el comando anterior):
+# a2ensite wordpress.conf
+
+# 6. Editar Archivo de Configuración de WordPress
+cd /var/www/wordpress
+nano wp-config-sample.php 
+# (Luego cambiar el nombre a wp-config.php)
+
+# Cambiar dentro de wp-config-sample.php (Ejemplo en Imagen image_1b9c13.jpg):
+# define('DB_NAME', 'wordpress');
+# define('DB_USER', 'wpuser'); 
+# define('DB_PASSWORD', 'password_seguro'); 
+# define('DB_HOST', 'localhost');
+2. Administración y Configuración de Correo (DNS, Postfix y MSMTP)
+Bash
+
+# ===============================================
+# 2. Correo (DNS, Postfix y MSMTP)
+# ===============================================
+
+# --- 2.1. Configurar Zona DNS (BIND9) ---
+
+# Configurar Zona Directa (Registro MX, ejemplo en Imagen image_1b9c2b.png)
+# sudo nano /etc/bind/db.miguel.lan
+# Agregar registro MX:
+# @    IN    MX 10  correo.miguel.lan.
+# correo IN  A      192.168.100.57 
+
+# Configurar Zona Inversa (Registro PTR, ejemplo en Imagen image_1b9c10.png)
+# sudo nano /etc/bind/db.192.168.100
+# Agregar registro PTR:
+# 57   IN    PTR    correo.miguel.lan.
+
+# Recargar el servicio DNS
+sudo systemctl reload bind9 
+
+# Comprobaciones
+# nslookup correo.miguel.lan 
+# nslookup 192.168.16.132 (o la IP del servidor)
+
+# --- 2.2. Postfix (Servidor SMTP) ---
+
+# Instalación de Postfix
+sudo apt install postfix
+
+# Verificar el estado: sudo systemctl status postfix 
+
+# Comprobar comunicación por puerto 25 (local y remota)
+# netstat -lnpt | grep 25
+# nc -zv 192.168.16.132 25 # Desde otra máquina
+
+# Configurar el archivo principal de Postfix
+sudo nano /etc/postfix/main.cf 
+
+# Ajustes clave en main.cf (Ejemplo en Imagen image_1b9c0e.png):
+# myhostname = correo.miguel.lan
+# myorigin = /etc/mailname
+# mydestination = $myhostname, miguel.lan, localhost.localdomain, localhost
+# mynetworks = 192.168.100.0/24 127.0.0.0/8 [::ffff:127.0.0.0]/104 [::1]/128
+
+# Reiniciar el servidor postfix
+sudo systemctl reload postfix
+
+# Comprobar la configuración activa
+# postconf -n 
+
+# --- 2.3. MSMTP (Cliente para envío de Gmail/Externo) ---
+
+# Instalar MSMTP
+sudo apt install msmtp
+
+# Configurar el archivo .msmtprc
+sudo nano /home/miguel/.msmtprc 
+
+# Contenido de .msmtprc (Ejemplo en Imagen image_1b9bef.png):
+# defaults
+# auth on
+# tls on
+# tls_trust_file /etc/ssl/certs/ca-certificates.crt
+# account gmail
+# host smtp.gmail.com
+# port 587
+# from miguelramirezmeli21@gmail.com
+# user miguelramirezmeli21@gmail.com
+# password gskz kcdl mpcv fujg # ¡Usar la App Password de Gmail!
+# account default : gmail
+
+# Dar permisos de seguridad al archivo
+sudo chmod 600 /home/miguel/.msmtprc
+
+# Enviar correo (Método 1: Usando un archivo de mensaje)
+# Crear archivo mensaje.txt (Ejemplo en Imagen image_1b9bd2.png)
+# nano mensaje.txt 
+# Contenido de mensaje.txt:
+# Para: destino@example.com
+# Asunto: PRUEBA
+# 
+# HOLA SOY DE LA MATERIA SISTEMAS OPERATIVOS2 Y ESE ES MI CORREO DE PRUEBA.
+
+# Enviar el correo:
+# msmtp miguelramirezmeli21@gmail.com < mensaje.txt
+3. Configuración de Impresión (CUPS)
+Bash
+
+# ===============================================
+# 3. Impresión (CUPS)
+# ===============================================
+
+# Instalar CUPS
+sudo apt install cups 
+# Instalar impresora virtual PDF
+sudo apt install cups-pdf 
+
+# Configurar acceso remoto y compartir impresoras
+sudo cupsctl --remote-admin --remote-any --share-printers
+
+# Habilitar la comunicación del puerto 631 en el firewall
+sudo ufw allow 631/tcp
+
+# Configurar la impresora (acceso web)
+# Acceder a: http://192.168.16.132:631 (cambiar IP)
+4. Servidor Web Proxy (Squid)
+Bash
+
+# ===============================================
+# 4. Proxy Web (Squid)
+# ===============================================
+
+# Instalar Squid
+sudo apt install squid 
+# Verificar estado, iniciar y habilitar
+
+# --- 4.1. Configuración de Puerto ---
+# Editar el archivo de configuración de Squid
+sudo nano /etc/squid/squid.conf 
+
+# Cambiar el puerto HTTP (Ejemplo en Imagen image_1b9bcf.png):
+# http_port 5000
+
+# Reiniciar el servicio
+sudo systemctl restart squid 
+# Comprobar que el puerto 5000 esté activo:
+# ss -antpl | grep 5000
+
+# Permitir la comunicación del puerto en el firewall
+sudo ufw allow 5000/tcp
+
+# --- 4.2. Control de Acceso (ACLs) ---
+# Buscar 'TAG: follow_x_forwarded_for' o al inicio de http_access
+# Agregar reglas de lista de acceso (Ejemplo en Imagen image_1b9bd7.png):
+
+# Crear listas de bloqueo
+# acl blacklist1 dstdomain youtube.com
+# acl blacklist2 dstdomain facebook.com
+
+# Aplicar las reglas
+# http_access deny blacklist1   # BLOQUEA acceso a YouTube
+# http_access deny blacklist2   # BLOQUEA acceso a Facebook
+# http_access allow all         # PERMITE acceso a TODOS los demás sitios
+
+# --- 4.3. Prueba ---
+# En la máquina cliente, configurar el proxy web con:
+# IP del Servidor y Puerto 5000
+5. Configuración de Red (Rutas Estáticas)
+Bash
+
+# ===============================================
+# 5. Configuración de Red (Rutas Estáticas)
+# ===============================================
+
+# Máquina Virtual 1 (VM1) - Asignación de IP: 192.168.10.1/24
+# Máquina Virtual 2 (VM2) - Asignación de IP: 192.168.20.1/24
+
+# --- Paso 1: Configurar IP en cada VM ---
+# Ejecutar en VM1:
+sudo ip addr add 192.168.10.1/24 dev eth0
+sudo ip link set eth0 up
+
+# Ejecutar en VM2:
+sudo ip addr add 192.168.20.1/24 dev eth0
+sudo ip link set eth0 up
+
+# --- Paso 2: Añadir Rutas Estáticas ---
+# En VM1 (para llegar a la red 192.168.20.0/24 a través de VM2):
+sudo ip route add 192.168.20.0/24 via 192.168.20.1 dev eth0
+
+# En VM2 (para llegar a la red 192.168.10.0/24 a través de VM1):
+sudo ip route add 192.168.10.0/24 via 192.168.10.1 dev eth0
+
+# --- Paso 3: Configurar Ruta por Defecto (Opcional) ---
+# En VM1:
+# sudo ip route add default via 192.168.10.1 dev eth0
+# En VM2:
+# sudo ip route add default via 192.168.20.1 dev eth0
+
+# --- Paso 4: Probar la Conexión ---
+# Desde VM1 hacer ping a VM2:
+ping 192.168.20.1
+
+# Desde VM2 hacer ping a VM1:
+ping 192.168.10.1
