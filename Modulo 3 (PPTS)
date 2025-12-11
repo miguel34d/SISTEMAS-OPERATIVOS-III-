@@ -1,0 +1,264 @@
+💻 Comandos y Configuraciones para Servidores Linux
+1. Configuración de GRUB (Gestor de Arranque)
+Bash
+
+# ===============================================
+# 1. Configuración de GRUB (Archivo: /etc/default/grub)
+# ===============================================
+
+# Comando para editar el archivo de configuración de GRUB
+sudo nano /etc/default/grub
+
+# Opciones clave dentro del archivo /etc/default/grub:
+# GRUB_DEFAULT=0          # Arranca siempre el primer sistema (0)
+# GRUB_TIMEOUT_STYLE=menu # Muestra el menú de arranque. Usar 'hidden' para ocultar.
+# GRUB_TIMEOUT=10         # Espera 10 segundos antes de arrancar por defecto
+# GRUB_CMDLINE_LINUX_DEFAULT="quiet splash" # Opciones para el kernel por defecto (quiet: sin mensajes técnicos, splash: pantalla de presentación)
+# GRUB_CMDLINE_LINUX=""   # Parámetros extra para TODOS los arranques (generalmente vacío)
+
+# Aplicar los cambios de configuración
+sudo update-grub
+
+# NOTA PARA RECUPERACIÓN (CAMBIO MANUAL EN EL ARRANQUE):
+# En el menú de GRUB, editar la línea que empieza con:
+# linux /boot/vmlinuz-xxx root=UUID=xxxx ro quiet splash
+# y cambiarla por:
+# linux /boot/vmlinuz-xxx root=UUID=xxxx rw init=/bin/bash
+
+# Comando después de la modificación en el arranque para montar en modo lectura/escritura:
+# mount -o remount,rw /
+2. Configuración de SSH (OpenSSH)
+Bash
+
+# ===============================================
+# 2. Configuración de SSH
+# ===============================================
+
+# Instalación de OpenSSH Server y Client
+sudo apt update
+sudo apt install openssh-server openssh-client -y
+
+# Verificar la versión instalada (opcional)
+ssh -V
+
+# Comando para editar el archivo de configuración del servidor SSH
+sudo nano /etc/ssh/sshd_config
+
+# Opciones clave dentro del archivo /etc/ssh/sshd_config:
+# Port 22                # Puerto SSH (se recomienda cambiar por seguridad)
+# PermitRootLogin no     # NO permitir login directo como root
+# PasswordAuthentication yes # Permitir autenticación por contraseña
+# PubkeyAuthentication yes   # Permitir autenticación por llaves públicas
+# AllowUsers miguel          # Solo permitir el acceso al usuario 'miguel'
+
+# --- Ingresar vía SSH ---
+# Ingreso básico:
+# ssh usuario@servidor.com
+# Ingreso especificando un puerto diferente (ej: 2222):
+# ssh -p 2222 usuario@servidor.com
+# Ejemplo con usuario 'miguel':
+# ssh miguel@192.168.100.126
+
+# --- Secure Copy (scp) ---
+# Copiar un archivo:
+# scp mi_archivo.txt usuario@direccionip:/ruta/destino/
+# Copiar un archivo especificando puerto (-P mayúscula):
+# scp -P 2222 archivo.txt miguel@direccionip:/home/miguel/
+# Copiar una carpeta completa (-r):
+# scp -r /home/usuario/Escritorio/Holamundo/ miguel@ip:/home/miguel/Escritorio
+
+# --- Creación de Llaves SSH ---
+# Crear par de llaves RSA de 4096 bits con comentario (por defecto en ~/.ssh/id_rsa)
+ssh-keygen -t rsa -b 4096 -C "PARA EL USUARIO MIGUEL"
+
+# Crear par de llaves en una ruta específica
+# ssh-keygen -t rsa -b 4096 -f /home/miguel-20251367/.ssh/nueva_llave
+
+# Tipos de llave:
+# -t rsa: El más compatible, uso general
+# -t ed25519: Más moderno y rápido (mejor seguridad)
+# -t ecdsa: Menos común
+
+# --- Visualizar y Copiar Llave Pública ---
+# Ir al directorio de llaves:
+# cd /home/miguel-20251367/.ssh
+# Ver el comentario de una llave:
+# ssh-keygen -l -f /home/miguel-20251367/.ssh/id_rsa
+
+# Copiar llave pública al servidor remoto (recomendado):
+# ssh-copy-id -f /home/miguel-20251367/.ssh/id_rsa -p 22 miguel@direccionip
+3. Configuración de DNS (BIND9)
+Bash
+
+# ===============================================
+# 3. Configuración de DNS (BIND9)
+# ===============================================
+
+# Instalación de BIND9
+sudo apt install bind9 bind9utils bind9-doc -y
+
+# 1. Configurar Opciones Globales (Forwarders)
+# Comando para editar el archivo de opciones
+# sudo nano /etc/bind/named.conf.options
+# (Aquí se especifican forwarders si es necesario)
+
+# 2. Configurar Zonas (named.conf.local)
+# Comando para editar el archivo de zonas
+sudo nano /etc/bind/named.conf.local
+
+# Contenido a agregar en /etc/bind/named.conf.local (Imagen: image_1ba679.png)
+# # Zona directa: nombre -> IP
+# zone "miguel.local" {
+#     type master;
+#     file "/etc/bind/db.miguel.local"; # Archivo de registros directos
+# };
+
+# # Zona inversa: IP -> nombre (para red 192.168.100.0/24 -> 100.168.192.in-addr.arpa)
+# zone "100.168.192.in-addr.arpa" { 
+#     type master;
+#     file "/etc/bind/db.192";      # Archivo de registros inversos
+# };
+
+# 3. Crear el Archivo de Zona Directa
+# Copiar la plantilla de zona local
+sudo cp /etc/bind/db.local /etc/bind/db.miguel.local
+# Editar el nuevo archivo de zona directa
+sudo nano /etc/bind/db.miguel.local
+
+# Contenido de db.miguel.local (Imagen: image_1ba3af.png)
+# $TTL 604800
+# @    IN    SOA    ns1.miguel.local. admin.miguel.local. (
+#                   1         ; Serial
+#                   604800    ; Refresh
+#                   86400     ; Retry
+#                   2419200   ; Expire
+#                   604800 )  ; Negative Cache TTL
+# ;
+# @    IN    NS     ns1.miguel.local.
+# ns1  IN    A      192.168.100.123
+# pc1  IN    A      192.168.100.124
+# pc2  IN    A      192.168.100.125
+# mail IN    A      192.168.100.126
+
+# 4. Crear el Archivo de Zona Inversa
+# Copiar la plantilla de zona inversa (usando db.127 como base, IP final 192)
+sudo cp /etc/bind/db.127 /etc/bind/db.192
+# Editar el nuevo archivo de zona inversa
+sudo nano /etc/bind/db.192
+
+# Contenido de db.192 (Zona Inversa) (Imagen: image_1ba65d.png)
+# $TTL 604800
+# @    IN    SOA    ns1.miguel.local. admin.miguel.local. (
+#                   1         ; Serial
+#                   604800    ; Refresh
+#                   86400     ; Retry
+#                   2419200   ; Expire
+#                   604800 )
+# ;
+# @    IN    NS     ns1.miguel.local.
+# 123  IN    PTR    ns1.miguel.local.
+# 124  IN    PTR    pc1.miguel.local.
+# 125  IN    PTR    pc2.miguel.local.
+# 126  IN    PTR    mail.miguel.local.
+
+# 5. Revisar Errores de Configuración (named-checkconf y named-checkzone)
+# Revisar archivo de configuración principal
+sudo named-checkconf
+# Revisar zona directa
+sudo named-checkzone miguel.local /etc/bind/db.miguel.local
+# Revisar zona inversa
+sudo named-checkzone 100.168.192.in-addr.arpa /etc/bind/db.192
+
+# 6. Reiniciar y Habilitar el Servicio DNS
+# Reiniciar el servicio para aplicar los cambios
+sudo systemctl restart bind9
+# Habilitar el servicio para que inicie con el sistema
+sudo systemctl enable bind9
+# Verificar estado
+sudo systemctl status bind9
+
+# 7. Prueba de DNS (usando la IP del servidor DNS 192.168.100.123)
+# Prueba de zona directa
+# dig @192.168.100.123 ns1.miguel.local
+4. Configuración de DHCP (isc-dhcp-server)
+Bash
+
+# ===============================================
+# 4. Configuración de DHCP (isc-dhcp-server)
+# ===============================================
+
+# Instalación del servidor DHCP
+sudo apt update
+sudo apt install isc-dhcp-server -y
+
+# 1. Configurar Interfaz de Red
+# Comando para editar el archivo de configuración de la interfaz
+sudo nano /etc/default/isc-dhcp-server
+
+# Dentro de /etc/default/isc-dhcp-server, descomentar/cambiar:
+# INTERFACESv4="enp0s3" # Cambiar 'enp0s3' por el nombre de tu interfaz de red
+
+# 2. Configurar la Red (Archivo Principal)
+# Comando para editar el archivo de configuración
+sudo nano /etc/dhcp/dhcpd.conf
+
+# Contenido clave a agregar o modificar en /etc/dhcp/dhcpd.conf (Imagen: image_1ba390.png)
+# # Configuración global
+# option domain-name "sistemasoperativos.lan";
+# option domain-name-servers 192.168.100.123; # IP del servidor DNS
+# default-lease-time 600;  # Tiempo de concesión por defecto (segundos)
+# max-lease-time 7200;     # Máximo tiempo de concesión (segundos)
+
+# # Subred de la red interna
+# subnet 192.168.100.0 netmask 255.255.255.0 {
+#   range 192.168.100.124 192.168.100.200; # Rango de IP para los clientes
+#   option routers 192.168.100.123;         # Puerta de enlace (Gateway)
+#   option broadcast-address 192.168.100.255;
+# }
+
+# 3. Reiniciar el Servicio DHCP
+# Reiniciar el servicio para aplicar los cambios
+sudo systemctl restart isc-dhcp-server
+# Verificar estado
+sudo systemctl status isc-dhcp-server
+
+# 4. Prueba en un cliente (solicitar IP)
+# sudo dhclient -v
+5. Configuración de FTP (VSFTPD)
+Bash
+
+# ===============================================
+# 5. Configuración de FTP (VSFTPD)
+# ===============================================
+
+# 1. Instalación del Servidor FTP (vsftpd)
+sudo apt update
+sudo apt install vsftpd -y
+
+# 2. Configuración Básica de vsftpd
+# Comando para editar el archivo de configuración
+sudo nano /etc/vsftpd.conf
+
+# Opciones clave dentro del archivo /etc/vsftpd.conf (Imagen: image_1ba378.png)
+# # Permitir login local (usuarios del sistema)
+# local_enable=YES
+# # Permitir subir archivos
+# write_enable=YES
+# # Chroot (para que el usuario no salga de su carpeta)
+# chroot_local_user=YES
+# # Habilitar modo pasivo
+# pasv_enable=YES
+# pasv_min_port=10000
+# pasv_max_port=10100
+# # Opcional: habilitar registro de transferencias
+# xferlog_enable=YES
+
+# 3. Reiniciar el Servicio FTP
+# Reiniciar el servicio para aplicar los cambios
+sudo systemctl restart vsftpd
+# Habilitar el servicio para que inicie con el sistema
+sudo systemctl enable vsftpd
+
+# 4. Acceder al FTP
+# Acceder a través de un navegador o cliente FTP:
+# ftp://ip
