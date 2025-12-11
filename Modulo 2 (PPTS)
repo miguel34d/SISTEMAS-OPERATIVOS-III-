@@ -1,0 +1,220 @@
+# MODULO II - Sistemas operativos en funcionamiento
+
+## 2.1 Detección de hardware o sistema
+
+# (SISTEMA)
+# Ver información actual del host
+hostnamectl
+# Mostrar información detallada de la distribución Linux
+lsb_release -a
+
+# (HARDWARE)
+
+### Procesador:
+# Información detallada del CPU
+lscpu
+# Información del procesador
+cat /proc/cpuinfo
+
+### Memoria:
+# Memoria RAM disponible y en uso
+free -h
+# Información detallada de memoria
+cat /proc/meminfo
+
+### Discos y almacenamiento:
+# Lista de dispositivos de bloque
+lsblk
+# Particiones de discos
+fdisk -l
+# Espacio en disco usado y disponible
+df -h
+
+### Hardware general:
+# Información completa del hardware
+lshw
+# Dispositivos PCI
+lspci
+# Dispositivos USB
+lsusb
+# Información del BIOS y hardware
+dmidecode
+
+### Tarjeta gráfica:
+# Información de gráficos
+lspci | grep -i vga
+
+## 2.2 Gestión de software
+
+### Instalar o actualizar el software de terceros
+# Mostrar lista de paquetes
+dpkg -l
+# Instalar paquete
+sudo apt install nombre_paquete
+# Instalar paquete .deb
+sudo dpkg -i paquete.deb
+# Actualizar lista de paquetes
+sudo apt update
+# Actualizar paquetes instalados
+sudo apt upgrade
+# Actualizar distribución
+sudo apt dist-upgrade
+
+### Ver los repositorios del Sistema
+# Ruta común de repositorios oficiales (varía según distribución)
+cat /etc/apt/sources.list.d/official-package-repositories.list
+
+### Añadir un repositorio
+# Añadir PPA (para distribuciones basadas en Debian/Ubuntu)
+sudo add-apt-repository ppa:nombre/repositorio
+# Clonar repositorio Git
+git clone url
+
+### Visualizar Procesos
+# Todos los procesos del sistema
+ps aux
+# Lista completa de procesos
+ps -ef
+# Monitor interactivo de procesos
+top
+# Versión mejorada de top
+htop
+# Procesos en forma de árbol
+pstree
+
+### Terminar Procesos
+# Terminar proceso por PID
+kill PID
+# Forzar terminación (señal SIGKILL)
+kill -9 PID
+# Terminar por nombre
+killall nombre_proceso
+# Terminar por nombre (más flexible)
+pkill nombre_proceso
+
+### Cambiar prioridad de los Procesos
+# Ejecutar con prioridad específica (nice -20 es la más alta)
+nice -n prioridad comando
+# Cambiar prioridad de proceso existente (renice -20 es la más alta)
+renice prioridad PID
+
+### Ejecución de procesos en segundo plano
+# Ejecutar en segundo plano
+comando &
+# Pausar proceso (Ctrl + Z) y enviar a segundo plano
+bg
+# Ver trabajos en segundo plano
+jobs
+
+## 2.4 Programación de tareas
+
+### Cron
+# Editar crontab del usuario
+crontab -e
+# Listar tareas programadas
+crontab -l
+# Eliminar todas las tareas
+crontab -r
+
+### AT
+# Programar tarea para hora específica (ej: at 10:30, luego se escribe el comando)
+at hora
+# Listar tareas pendientes
+atq
+# Eliminar tarea programada
+atrm número_job
+
+## 2.5 Logs del sistema en Linux
+
+### Logs del sistema
+# Logs generales del sistema (varía según distribución)
+cat /var/log/syslog
+# Mensajes del sistema (en algunas distribuciones antiguas)
+cat /var/log/messages
+# Logs de autenticación
+cat /var/log/auth.log
+# Sistema de logs de systemd (forma moderna)
+journalctl
+
+### Logs de Aplicaciones (Ejemplos - las rutas varían)
+# Logs de Apache
+ls /var/log/apache2/
+# Logs de MySQL
+ls /var/log/mysql/
+# Logs de Nginx
+ls /var/log/nginx/
+
+### Logs de eventos
+# Mensajes del kernel
+dmesg
+# Historial de logins de usuarios
+last
+# Usuarios conectados actualmente
+who
+
+## 2.6 Gestión del almacenamiento
+
+### Sistema de Archivos en Linux
+# Sistemas de archivos montados
+mount
+# Sistemas de archivos montados con tipo
+df -T
+
+### Particiones
+# Administrar particiones (para MBR)
+fdisk /dev/sda
+# Herramienta avanzada de particiones (para MBR/GPT)
+parted /dev/sda
+# Para discos GPT
+gdisk /dev/sda
+
+### Montar Particiones
+# Montar manualmente
+mount /dev/sda1 /mnt/punto_montaje
+# Desmontar
+umount /mnt/punto_montaje
+# Ver configuración de montaje automático
+cat /etc/fstab
+
+### Eliminar particiones
+# Usando fdisk:
+# fdisk /dev/sda
+# (Dentro de fdisk: presionar d, luego número de partición, luego w)
+
+# Usando parted:
+# parted /dev/sda rm número_particion
+
+## 2.7 Administración de servicios
+
+### Ver todos los servicios en ejecución
+
+#### Systemd:
+systemctl list-units --type=service
+systemctl --type=service
+
+#### SysVinit (sistemas más antiguos):
+service --status-all
+
+### Ver puertos de red usados por servicios
+# Puertos y procesos asociados
+netstat -tulpn
+# Alternativa moderna a netstat
+ss -tulpn
+# Proceso usando puerto específico
+lsof -i :puerto
+
+### Gestión de servicios (Systemd)
+# Iniciar servicio
+systemctl start nombre_servicio
+# Detener servicio
+systemctl stop nombre_servicio
+# Reiniciar servicio
+systemctl restart nombre_servicio
+# Ver estado del servicio
+systemctl status nombre_servicio
+# Habilitar al inicio
+systemctl enable nombre_servicio
+# Deshabilitar al inicio
+systemctl disable nombre_servicio
+# Ver si está habilitado
+systemctl is-enabled nombre_servicio
