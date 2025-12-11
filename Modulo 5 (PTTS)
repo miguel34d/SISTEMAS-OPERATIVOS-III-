@@ -1,0 +1,203 @@
+🚀 Comandos de Sincronización, Clustering y Alta Disponibilidad
+1. Sincronización de Archivos (RSYNC)
+Bash
+
+# ===============================================
+# 1. RSYNC (Sincronización de Archivos)
+# ===============================================
+
+# Crear directorios para la prueba
+mkdir origen
+mkdir destino
+
+# Crear 100 archivos en el directorio destino
+touch /destino/SO{1..100}
+
+# Sincronización simple (copia todo lo que cambió)
+rsync -a destino/ origen
+
+# Eliminar contenido de origen (para demostrar la copia)
+rm origen/* -r 
+
+# Simular la sincronización (-n: Dry Run, -v: Verbose, -a: Archivo)
+rsync -anv destino/ origen  
+
+# Crear un archivo nuevo para verificar la detección de cambios
+touch destino/SO101
+rsync -av destino/ origen  # Ahora sí copia el nuevo archivo
+
+# Excluir un archivo específico
+rsync -av --exclude=SO1 destino/ origen
+
+# Excluir archivos usando una lista de un archivo de texto
+# (Asumiendo que /tmp/exposicion/archivocreado contiene los nombres de archivos a excluir)
+rsync -av --exclude-from=/tmp/exposicion/archivocreado destino/ origen
+
+# --- RSYNC con SSH (Transferencia Remota) ---
+
+# Enviar (PUSH) del cliente al servidor:
+rsync -av destino/ miguel@direcionip:/home/miguel/Desktop 
+
+# Recibir (PULL) del servidor al cliente:
+# (Asumiendo que 'miguel.txt' y 'matricula.txt' están en /tmp/archivos/ en el servidor)
+rysnc -av usuario@ip:/tmp/archivo /tmp/exposicion
+
+# --- Opciones Adicionales de RSYNC ---
+
+# Comprimir el archivo (-z: ayuda a consumir menos ancho de banda)
+rysnc -z ...
+
+# Mostrar el progreso (-P)
+rysnc -P ...
+
+# Especificar puerto SSH diferente (-e "ssh -p XXXX")
+rsync -avzP -e "ssh -p 2222" origen/ usuario@ip:/ruta/destino
+2. Configuración de Cluster (Pacemaker y Corosync)
+Bash
+
+# ===============================================
+# 2. CLUSTER (Pacemaker/Corosync)
+# ===============================================
+
+# --- 1. Instalación de Paquetes (Ambas máquinas) ---
+sudo apt update
+sudo apt install -y pacemaker corosync pcs fence-agents resource-agents
+
+# --- 2. Configuración de Firewall (Ambas máquinas) ---
+# Puertos requeridos por Corosync (5404, 5405) y PCSD (2224, 9929)
+sudo ufw allow 5404/udp
+sudo ufw allow 5405/udp
+sudo ufw allow 2224/tcp
+sudo ufw allow 9929/tcp
+sudo ufw reload
+
+# --- 3. Habilitación de Servicios (Ambas máquinas) ---
+sudo systemctl enable --now pcsd
+sudo systemctl enable corosync
+sudo systemctl enable pacemaker
+
+# --- 4. Configuración del Cluster (Solo en nodo principal) ---
+# Autenticar nodos (usando usuario hacluster, IPs de ejemplo)
+sudo pcs host auth 192.168.6.115 192.168.0.120 -u hacluster
+# Crear el cluster
+sudo pcs cluster setup mycluster 192.168.6.115 192.168.0.120
+# Iniciar y habilitar el cluster
+sudo pcs cluster start --all
+sudo pcs cluster enable --all
+
+# --- 5. Iniciar Servicios (Ambas máquinas) ---
+sudo systemctl start corosync
+sudo systemctl start pacemaker
+
+# --- 6. Verificar Estado y STONITH ---
+sudo pcs status
+# Deshabilitar STONITH (si aparece el warning, no recomendado en producción)
+sudo pcs property set stonith-enabled=false
+
+# --- 7. Crear Recurso de IP Flotante ---
+sudo pcs resource create clusterIP ocf:heartbeat:IPaddr2 ip=192.168.0.161 cidr_netmask=24 op monitor interval=30s
+
+# --- 8. Verificación Final ---
+sudo pcs status
+sudo pcs resource show
+sudo pcs cluster status
+
+# --- 9. Borrar Configuración (Ambas máquinas) ---
+# DESTRUIR CLUSTERS EXISTENTES
+sudo pcs cluster destroy
+sudo systemctl stop pacemaker corosync
+sudo systemctl disable pacemaker corosync
+# Limpiar configuraciones antiguas
+sudo rm -rf /etc/corosync/corosync.conf
+sudo rm -rf /var/lib/pacemaker/cib/
+sudo rm -rf /var/lib/cluster/
+# REINICIAR PCSD (antes de configurar un cluster nuevo)
+sudo systemctl stop pcsd
+sudo systemctl start pcsd
+# Configurar Cluster Nuevo con --force (para reescritura)
+sudo pcs cluster setup mycluster 192.168.100.57 192.168.100.110 --force
+# INICIAR CLUSTER NUEVO
+sudo pcs cluster start --all
+sudo pcs cluster enable --all
+3. Configuración de Alta Disponibilidad (Keepalived)
+Bash
+
+# ===============================================
+# 3. ALTA DISPONIBILIDAD (Keepalived)
+# ===============================================
+
+# (ASUMIMOS HOSTS VIRTUALES CON NOMBRES so1 y so2 CREADOS EN APACHE O NGINX)
+
+# Instalación de Keepalived (Ambas máquinas)
+sudo apt install keepalived
+
+# Habilitar e iniciar el servicio (Ambas máquinas)
+sudo systemctl enable keepalived
+sudo systemctl start keepalived
+# Verificar estado: sudo systemctl status keepalived
+
+# Navegar al directorio de configuración
+cd /etc/keepalived
+
+# Modificar el archivo de configuración (Ambas máquinas)
+sudo nano keepalived.conf
+
+# CONFIGURACIÓN CLAVE DENTRO DE keepalived.conf:
+# Nota: La IP flotante de ejemplo es 192.168.100.200
+
+# # CONFIGURACIÓN PARA SERVIDOR MASTER
+# state MASTER
+# interface en33               # Adaptador de red (ej: en33)
+# virtual_router_id 51
+# priority 100                 # Privilegio más alto para MASTER
+# virtual_ipaddress {
+#     192.168.100.200/24       # IP flotante (VIP)
+# }
+
+# # CONFIGURACIÓN PARA SERVIDOR BACKUP
+# state BACKUP
+# interface en33               # Adaptador de red (ej: en33)
+# virtual_router_id 51
+# priority 50                  # Privilegio más bajo para BACKUP
+# virtual_ipaddress {
+#     192.168.100.200/24
+# }
+
+# Recargar/Reiniciar el servicio (Ambas máquinas)
+sudo systemctl reload keepalived
+sudo systemctl restart keepalived
+
+# Verificar la configuración usando la IP flotante
+# (Acceder desde navegador a http://192.168.100.200)
+4. Configuración de Balanceo de Carga (HAProxy)
+Bash
+
+# ===============================================
+# 4. BALANCEO DE CARGA (HAProxy)
+# ===============================================
+
+# 1. Instalar HAProxy
+sudo apt install -y haproxy
+
+# 2. Configurar Puertos (Ejemplo de Apache en el puerto 8080)
+# Esto implica que los servidores backend (Apache) deben estar escuchando en 8080.
+# sudo nano /etc/apache2/ports.conf # (Asegurarse de que escuche en 8080)
+
+# 3. Configurar HAProxy
+cd /etc/haproxy 
+sudo nano haproxy.cfg
+
+# Contenido clave de haproxy.cfg (Ejemplo similar a la Imagen image_1b9777.png):
+# frontend http_front
+#     bind *:80                    # Escuchar en el puerto 80 (público)
+#     default_backend http_back    # Enviar tráfico al backend definido
+
+# backend http_back
+#     balance roundrobin           # Algoritmo de balanceo
+#     server host_1 10.0.1.11:80   # Servidor 1 (IP interna o local)
+#     server host_2 10.0.1.12:80   # Servidor 2
+#     server host_3 10.0.1.13:80   # Servidor 3
+
+# 4. Reiniciar el servicio
+sudo systemctl reload haproxy
+sudo systemctl restart haproxy
