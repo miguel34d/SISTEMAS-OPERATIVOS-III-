@@ -1,8 +1,7 @@
 #!/bin/bash
+
 💻 Comandos y Configuraciones para Servidores Linux
 1. Configuración de GRUB (Gestor de Arranque)
-Bash
-
 # ===============================================
 # 1. Configuración de GRUB (Archivo: /etc/default/grub)
 # ===============================================
