@@ -1,29 +1,32 @@
-Comandos usados práctica 1
-============================================
+#!/bin/bash
+# ============================================
+# Comandos usados práctica 1
+# ============================================
 
 🔧 CONFIGURACIÓN GRUB Y RECUPERACIÓN
 
 sudo nano /etc/default/grub
-GRUB_TIMEOUT=20
+# MODIFICA A: 
+# GRUB_TIMEOUT=20
 sudo update-grub
 sudo reboot
 
-🔓 RECUPERAR CONTRASEÑA ROOT
+#🔓 RECUPERAR CONTRASEÑA ROOT
 rw init=/bin/bash
 ctrl-X 
 passwd root
 miguel
 reboot -f
 su
-===========================================
-Comandos usados práctica 2
-============================================
+# ===========================================
+# Comandos usados práctica 2
+# ============================================
 
-📁 SCRIPTS DE ADMINISTRACIÓN
+#📁 SCRIPTS DE ADMINISTRACIÓN
 
 # Script de Backup
 nano backup.sh
---------------PRIMER SCRIPT------------------
+#--------------PRIMER SCRIPT------------------
 #!/bin/bash
 # Script para crear un backup comprimido de /home/tu_usuario
 
@@ -40,7 +43,7 @@ ARCHIVO="backup-${USUARIO}-${FECHA}.tar.gz"
 tar -czvf /home/$USUARIO/$ARCHIVO /home/$USUARIO
 
 echo "Backup creado correctamente: /home/$USUARIO/$ARCHIVO"
----------------------------------------------
+# ---------------------------------------------
 sudo chmod +x backup.sh
 cd
 ls
@@ -48,7 +51,7 @@ ls
 
 # Script de Red
 nano ifconfig.sh
------------------SEGUNDO SCRIPT--------------
+# -----------------SEGUNDO SCRIPT--------------
 #!/bin/bash
 # Script que guarda la salida de ifconfig en un archivo en el escritorio
 
@@ -66,14 +69,14 @@ ESCRITORIO="/home/$USUARIO/Desktop"
 ifconfig > "$ESCRITORIO/$NOMBRE.txt"
 
 echo "Archivo creado correctamente en $ESCRITORIO/$NOMBRE.txt"
--------------------------------------------
+# -------------------------------------------
 sudo chmod +x ifconfig.sh
 ./ifconfig.sh
-===========================================
+# ===========================================
 Comandos usados práctica 3
-============================================
+# ============================================
 
-🖥️  CONFIGURACIÓN SSH - VM LINUX
+# 🖥️  CONFIGURACIÓN SSH - VM LINUX
 
 ifconfig
 sudo apt install openssh-client openssh-server
@@ -82,7 +85,7 @@ sudo systemctl enable ssh
 sudo systemctl status ssh
 whoami
 
-💻 CONFIGURACIÓN SSH - WINDOWS HOST
+# 💻 CONFIGURACIÓN SSH - WINDOWS HOST
 
 ipconfig
 ping 192.168.16.132
@@ -90,7 +93,7 @@ ssh miguel@192.168.16.132
 whoami
 exit
 
-🔑 CONFIGURACIÓN CLAVES SSH
+# 🔑 CONFIGURACIÓN CLAVES SSH
 
 ssh-keygen
 cat C:\Users\HP\.ssh\id_ed25519.pub
@@ -107,8 +110,8 @@ ssh miguel@192.168.16.132
 
 
 
-ADICIONALES CONDICIONALES
---------------------------------------------------
+# ADICIONALES CONDICIONALES
+# --------------------------------------------------
 #!/bin/bash
 
 read -p "ESCRIBE 'eliminar' si quieres cabiar la direccion ip de el adaptador: " eliminar
