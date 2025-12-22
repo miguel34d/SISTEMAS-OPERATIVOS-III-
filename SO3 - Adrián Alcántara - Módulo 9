@@ -1,68 +1,68 @@
-```bash
-PRACTICA 9
-----------------------------------------------
+# =============================================
+# PRACTICA 1 - INSTALACIÓN DE WEBMIN
+# =============================================
 
-Instalación de Webmin en Debian/Ubuntu
-
-Descargar Webmin:
+# Descargar Webmin:
 wget https://github.com/webmin/webmin/releases/download/2.104/webmin_2.104_all.deb -O webmin.deb
 
-Instalar dependencias necesarias:
+# Instalar dependencias necesarias:
 sudo apt update
 sudo apt install -y perl libnet-ssleay-perl libauthen-pam-perl libpam-runtime libio-pty-perl libssl-dev
 
-Instalar Webmin:
+# Instalar Webmin:
 sudo dpkg -i webmin.deb
 
-Corregir posibles problemas de dependencias:
+# Corregir posibles problemas de dependencias:
 sudo apt --fix-broken install -y
 
-Reinstalar Webmin si fue necesario:
+# Reinstalar Webmin si fue necesario:
 sudo dpkg -i webmin.deb
 
-Acceder a Webmin:
-https://192.168.100.132:10000
+# Acceder a Webmin:
+# https://192.168.100.132:10000
 
-Webmin 2.104 — Step-by-Step Administration (Short Version)
+# =============================================
+# Webmin 2.104 — Step-by-Step Administration (Short Version)
+# =============================================
 
-1. User Administration
-   Go to System → Users and Groups.
-   Create User → fill info → Create.
-   Select a user → Delete User.
+# 1. User Administration
+#    Go to System → Users and Groups.
+#    Create User → fill info → Create.
+#    Select a user → Delete User.
 
-2. Service Management (Example: SSH)
-   Go to System → Bootup and Shutdown.
-   Select ssh/sshd service.
-   Click Start, Stop, or Restart.
+# 2. Service Management (Example: SSH)
+#    Go to System → Bootup and Shutdown.
+#    Select ssh/sshd service.
+#    Click Start, Stop, or Restart.
 
-3. Set a Static IP
-   Go to Networking → Network Configuration.
-   Click Network Interfaces.
-   Select interface → Edit Interface.
-   Choose Static, set IP/netmask/gateway.
-   Save → Apply Configuration.
+# 3. Set a Static IP
+#    Go to Networking → Network Configuration.
+#    Click Network Interfaces.
+#    Select interface → Edit Interface.
+#    Choose Static, set IP/netmask/gateway.
+#    Save → Apply Configuration.
 
-4. Software Management
-   Go to System → Software Packages.
-   Update: Refresh → Update packages.
-   Install: Install Package → type name → Install.
-   Remove: Search package → Remove.
+# 4. Software Management
+#    Go to System → Software Packages.
+#    Update: Refresh → Update packages.
+#    Install: Install Package → type name → Install.
+#    Remove: Search package → Remove.
 
-5. File Management
-   Go to Tools → File Manager.
-   Browse folders.
-   Select file → Edit → Save.
-   Select file/folder → Delete.
+# 5. File Management
+#    Go to Tools → File Manager.
+#    Browse folders.
+#    Select file → Edit → Save.
+#    Select file/folder → Delete.
 
-6. System Monitoring
-   Go to System → Monitoring.
-   Open dashboard to view CPU, memory, disk, processes.
+# 6. System Monitoring
+#    Go to System → Monitoring.
+#    Open dashboard to view CPU, memory, disk, processes.
 
---------------------------------------------------------------------
-PRACTICA 2
---------------------------------------------------------------------
+# =============================================
+# PRACTICA 2 - TERRAFORM EN DIGITAL OCEAN
+# =============================================
 
-MAQUINA SERVIDOR 
+# MAQUINA SERVIDOR 
 
 # 1. Atualizar sistema e instalar dependências
 sudo apt update
@@ -81,11 +81,14 @@ echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://
 sudo apt update
 sudo apt install terraform
 
+# Crear directorio y archivo de configuración
 mkdir SO3-Terra 
 cd SO3-Terra 
 nano main.tf 
 
--------------ARCHIVO MAIN.tf-------------------------
+# =============================================
+# ARCHIVO MAIN.tf - CONTENIDO
+# =============================================
 terraform {
   required_providers {
     digitalocean = {
@@ -110,18 +113,21 @@ resource "digitalocean_droplet" "vm" {
 output "ip_publica" {
   value = digitalocean_droplet.vm.ipv4_address
 }
-----------------------------------------------------------------------
 
-PASO 1 (EN DIGITALOCEAN): Ir a API y generar token, pegarlo en token = "TU_TOKEN_AQUI"
-PASO 2 (EN DIGITALOCEAN): Settings → Security → SSH Keys, generar una y pegarla en ssh_keys
-PASO 3: Ejecución - terraform init && terraform apply
-PASO 4: Conectarse por SSH - ssh root@IP
+# =============================================
+# PASOS DE EJECUCIÓN
+# =============================================
 
------------------------------------------------------------------------
-PRACTICA 3 
-----------------------------------------------------------------------
+# PASO 1 (EN DIGITALOCEAN): Ir a API y generar token, pegarlo en token = "TU_TOKEN_AQUI"
+# PASO 2 (EN DIGITALOCEAN): Settings → Security → SSH Keys, generar una y pegarla en ssh_keys
+# PASO 3: Ejecución - terraform init && terraform apply
+# PASO 4: Conectarse por SSH - ssh root@IP
 
-MAQUINA DIGITAL OCEAN 
+# =============================================
+# PRACTICA 3 - CONFIGURACIÓN DE ANSIBLE
+# =============================================
+
+# MAQUINA DIGITAL OCEAN (Linux)
 sudo adduser ansible 
 sudo usermod -aG sudo ansible 
 mkdir /home/ansible/.ssh
@@ -131,15 +137,15 @@ touch /home/ansible/.ssh/authorized_keys
 chmod 600 /home/ansible/.ssh/authorized_keys
 chown -R ansible:ansible /home/ansible/.ssh/authorized_keys
 
-------------------------------------------------------------------------
-MAQUINA SERVIDOR
+# =============================================
+# MAQUINA SERVIDOR (Controlador Ansible)
 ssh-keygen 
 cat /home/miguel/.ssh/id_ed25519.pub 
 # Pegar la clave pública en el authorized_keys de la máquina ansible
 ssh ansible@ip # para crear la huella
 
-------------------------------------------------------------------------
-Maquina WINDOWS 
+# =============================================
+# Maquina WINDOWS (Configuración para Ansible)
 net user "ansible" "MiguelSO3*" /add /fullname:"Ansible"
 net localgroup Administrators "ansible" /add
 net localgroup "Remote Management Users" ansible /add
@@ -154,41 +160,35 @@ New-ItemProperty -Path "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Policies
 Restart-Service WinRM
 netsh advfirewall firewall add rule name="WinRM HTTP" dir=in action=allow protocol=TCP localport=5985
 
-------------------------------------------------------------------------------
-MAQUINA SERVIDOR 
+# =============================================
+# MAQUINA SERVIDOR (Instalar Ansible)
 sudo add-apt-repository ppa:ansible/ansible -y
 sudo apt update
 sudo apt install ansible -y
 
+# Configurar inventario
 sudo nano /etc/ansible/hosts 
-# AGREGAR EL INVENTARIO
 
--------------------------------------------------------------------------------
+# =============================================
+# CONTENIDO DE /etc/ansible/hosts
+# =============================================
 [linux]
 mi-vm-linux ansible_host=104.248.8.112 ansible_user=ansible ansible_ssh_private_key_file=/home/miguel/.ssh/id_ed25519
 
 [windows]
 mi-pc-windows ansible_host=192.168.16.154 ansible_user=ansible ansible_password=MiguelSO3* ansible_connection=winrm ansible_port=5985 ansible_winrm_scheme=http ansible_winrm_transport=basic
 
-----------------------------------------------------------------------------------------
-sudo add-apt-repository ppa:ansible/ansible -y
-sudo apt update
-sudo apt install ansible -y
-
-PRUEBAS
+# =============================================
+# PRUEBAS DE CONEXIÓN
+# =============================================
 ansible windows -m win_ping
 ansible linux -m ping
 
--------------------------------------------------------------------------------------------------
-PRACTICA 4 
-------------------------------------------------------------------------------------------------
+# =============================================
+# PRACTICA 4 - PRIMERAS TAREAS CON ANSIBLE
+# =============================================
 
-MAQUINA SERVIDOR 
-
-PRUEBAS
-ansible windows -m win_ping
-ansible linux -m ping
-
+# Crear archivo de prueba
 nano SO3.txt 
 
 # Copiar archivo a Windows
@@ -197,25 +197,25 @@ ansible windows -m win_copy -a "src='/home/miguel/Desktop/SO3.txt' dest='C:/User
 # Mover archivo en Windows
 ansible windows -m win_copy -a "src='C:/Users/ansible/Desktop/SO3.txt' dest='C:/Users/ansible/Documents' remote_src=true"
 
-SI NO FUNCIONA 
+# Si no funciona el comando anterior
 ansible windows -m copy -a "src='C:/Users/ansible/Desktop/SO3.txt' dest='C:/Users/ansible/Documents' remote_src=true"
-
 
 # Reiniciar máquina Linux
 ansible linux -m reboot -b --ask-become-pass
 
--------------------------------------------------------------------------------------------------
-PRACTICA 5 
-------------------------------------------------------------------------------------------------
-
-MAQUINA SERVIDOR 
+# =============================================
+# PRACTICA 5 - PLAYBOOKS DE ANSIBLE
+# =============================================
 
 # Descargar Notepad++
 wget https://github.com/notepad-plus-plus/notepad-plus-plus/releases/latest/download/npp.8.8.8.portable.x64.zip -O ~/Desktop/npp_portable.zip
 
+# Crear playbook para Windows
 nano instalacion_notepad.yml 
 
------------------------------------------------------------------------------------------
+# =============================================
+# ARCHIVO instalacion_notepad.yml
+# =============================================
 ---
 - name: Instalar Notepad++ portable en Windows
   hosts: windows
@@ -228,7 +228,7 @@ nano instalacion_notepad.yml
 
     - name: Copiar archivo ZIP de Notepad++ a Windows
       win_copy:
-        src: /home/miguel/Desktop/npp_portable.zip (CAMBIAR LA RUTA DEPENDIENDO DE DONDE EXTRAISTE EL ARCHIVO) 
+        src: /home/miguel/Desktop/npp_portable.zip
         dest: C:\Program Files\Notepad++\npp_portable.zip
 
     - name: Descomprimir Notepad++ en Windows
@@ -247,15 +247,19 @@ nano instalacion_notepad.yml
         msg: "Notepad++ instalado correctamente"
       when: npp_check.stat.exists
 
------------------------------------------------------------------------------------------------
-
-# Instalación 
+# Ejecutar playbook
 ansible-playbook ~/Desktop/instalacion_notepad.yml
 
-# Instalación de NGINX
+# =============================================
+# Playbook para instalar NGINX en Linux
+# =============================================
+
+# Crear playbook
 nano instalacion_nginx.yml
 
-----------------------------------------------------------------------------------------------
+# =============================================
+# ARCHIVO instalacion_nginx.yml
+# =============================================
 ---
 - name: Instalar y configurar NGINX en Linux
   hosts: linux
@@ -285,18 +289,23 @@ nano instalacion_nginx.yml
         msg: "NGINX está activo y funcionando"
       when: "'nginx.service' in ansible_facts.services and ansible_facts.services['nginx.service'].state == 'running'"
 
--------------------------------------------------------------------------------------------------------------
-
+# Ejecutar playbook
 ansible-playbook ~/Desktop/instalacion_nginx.yml --ask-become-pass
 
+# =============================================
+# INFORMACIÓN ADICIONAL
+# =============================================
 
-Contenido web:
-/var/www/html/ - Directorio por defecto para contenido web
+# Directorios de contenido web en NGINX:
+# /var/www/html/ - Directorio por defecto para contenido web
+# /usr/share/nginx/html/ - Alternativo para contenido estático
 
-/usr/share/nginx/html/ - Alternativo para contenido estático
-
-
+# Comando para actualizar todos los servidores:
 ansible -i hosts.ini servidores -b -m apt -a "update_cache=yes upgrade=dist"
+
+# =============================================
+# EJEMPLO DE PLAYBOOK PARA INSTALAR SOFTWARE
+# =============================================
 ---
 - name: Instalar un software en servidores
   hosts: servidores
@@ -311,6 +320,3 @@ ansible -i hosts.ini servidores -b -m apt -a "update_cache=yes upgrade=dist"
       apt:
         name: htop
         state: present
-
-```
-
