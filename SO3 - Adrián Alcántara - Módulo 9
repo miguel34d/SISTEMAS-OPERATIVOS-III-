@@ -1,4 +1,5 @@
-PRACTICA 1
+```bash
+PRACTICA 9
 ----------------------------------------------
 
 Instalación de Webmin en Debian/Ubuntu
@@ -311,5 +312,5 @@ ansible -i hosts.ini servidores -b -m apt -a "update_cache=yes upgrade=dist"
         name: htop
         state: present
 
-
+```
 
