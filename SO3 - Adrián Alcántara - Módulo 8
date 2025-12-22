@@ -107,7 +107,7 @@ docker compose version
 mkdir wordpress-docker && cd wordpress-docker
 nano docker-compose.yml
 
----------------------# Contenido del archivo docker-compose.yml: #--------------------------------------
+# ----------------------------Contenido del archivo docker-compose.yml: --------------------------------------
 version: '3.8'
 
 services:
@@ -140,7 +140,7 @@ services:
 volumes:
   db_data:
   wordpress_data:
--------------------------------------------------------------------------------------
+# ------------------------------------------------------------------------------------------
 # 4. Levantar WordPress
 sudo docker compose up -d
 
