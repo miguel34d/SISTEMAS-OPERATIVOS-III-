@@ -1,3 +1,4 @@
+```bash
 # =============================================
 # PRACTICA 1 - INSTALACIÓN DE WEBMIN
 # =============================================
@@ -320,3 +321,4 @@ ansible -i hosts.ini servidores -b -m apt -a "update_cache=yes upgrade=dist"
       apt:
         name: htop
         state: present
+```
