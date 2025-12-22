@@ -38,7 +38,7 @@ sudo docker ps -a
 sudo docker stop nginx
 
 # 8. Mensaje final
-http://127.0.0.1:8888"
+http://127.0.0.1:8888
 
 ########################################
 #               PRACTICA 2            #
